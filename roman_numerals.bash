@@ -3,14 +3,49 @@
 SYNTAX=MODERN
 # EARLY, MODERN, VINCULUM, APOSTROPHUS
 
+# Forms
+HALF_FORM=TRUE
+ADDITIVE_FORM=TRUE  # BY DEFAULT
+SUBTRACTIVE_FORM=TRUE # BY DEFAULT
+  SUBTRACTIVE_FORM_4=TRUE
+  SUBTRACTIVE_FORM_8=FALSE
+  SUBTRACTIVE_FORM_9=TRUE
+
 FORMAT=CLASSIC
 # Akin to conversion algorithm
 # 0. CLASSIC (digit by digit)
-# Order of Letters:  MDCLXVI
-#   1. largest closest L
-#   2. largest closest X
-#   3. largest closest V
-#   4. largest closest I
+# 1. Double Digit (good for years)
+# 2. Standard From
+#    - Additive=TRUE
+#    - Subrative=TRUE
+#    - HALF=TRUE
+#    - extendsubtrative = FALSE
+#    - Subtractive_form_8 = FALSE
+# 3. Additive only
+# 3. Subtractive only
+# 4. Optimal
+#    - extended subtractive form
+#    - ADDITIVE=TRUE
+#    - SUBRACTIVE=TRUE
+#    - HALF=TRUE
+#    - SUBTRACTIVE_FORM_8=TRUE
+
+# Classic --  Standard Notation
+#  - ADDITIVE_FORMAT = TRUE
+#  - SUBTRACTIVE_FORMAT = FALSE
+#  - SUBTRACTIVE_FORM = TRUE
+      HALF_FORM
+      SUBTRACTIVE_FORM_4
+      SUBTRACTIVE_FORM_8
+      SUBTRACTIVE_FORM_9
+      EXTENDED_SUBTRACTIVE_FORM
+# - Additive Only, except of the individual subtactive forms and 
+
+#Forms -- verses notation..
+
+#Is classic and double digit, just variants of optimal.
+#That is
+#  Classic, drive the optimial alorith one digit at a time
 
 
 MAX_EARLY_ROMAN_NUMBER=899
@@ -31,19 +66,21 @@ declare -a roman_array=(
 
 # arabic2roman_classic
 function arabic2roman_xxx() {
-  number="$1"
+  local number="$1"
+  local count=${#number}
 
-  count=${#number}
+  local c d
   for ((c=0, d=${count}; c < ${count}; c++, d--)) ; do
-    digit=${number:$c:1}
-    digit2roman $digit ${roman_array[d]}
+    local digit=${number:$c:1}
+    digit2roman $digit d
   done
 }
 
 function arabic2roman(){
   # Classical Form
 
-  number="$1"
+  local number="$1"
+  local group3 group2 group1
   
   if ((number > ${MAX_ROMAN_NUMBER})) ; then
     { echo "Current Syntax: ${SYNTAX}" ;
@@ -84,18 +121,19 @@ function arabic2roman(){
 
 # CLASSIC,
 function set_format () {
-  FORMAT="$1"
+  local _format="$1"
 
-  [[ -z ${FORMAT} ]] && SYNTAX=CLASSIC
-
+  [[ -z ${_format} ]] && _format=CLASSIC
+  FORMAT=${_format}
 }
 
 # EARLY, MODERN, VINCULUM, APOSTROPHUS
 function set_syntax() {
-  SYNTAX="$1"
+  local _syntax="$1"
   
-  [[ -z ${SYNTAX} ]] && SYNTAX=MODERN 
+  [[ -z ${_syntax} ]] && _syntax=MODERN 
 
+  SYNTAX=${_syntax}
   case ${SYNTAX} in
     EARLY )
       MAX_ROMAN_NUMBER=${MAX_EARLY_ROMAN_NUMBER}
@@ -124,7 +162,7 @@ function set_defaults() {
 }
 
 function set_subtractive_form() {
-  _value="$1"
+  local _value="$1"
 
   subtractive_form=TRUE      
   subtractive_form_4=TRUE   # IV -versus- IIII
@@ -139,34 +177,30 @@ function set_subtractive_form() {
 }
 
 function set_half_form() {
-  _value="$1"
+  local _value="$1"
 
   half_form=TRUE
   if [[ $_value == FALSE ]] ; then
     half_form=FALSE
-    subtractive_form_4=FALSE
+    subtractive_form_4=FALSE   # IV is not valid
   fi
 }
-
-# Note it is an error/inconsistency if
-#   half_form == FALSE and subtractive_form_4 == TRUE
-#
-# Hence, subtractive_form_4 is ignored in half_form
 
 
 set_defaults
 
 
 function digit2roman() {
-  digit=$1
-  place=$2
+  local digit=$1
+  local place=$2
+
   if [[ -z ${place} ]] ; then
-    place=${roman_array[1]}
+    place=1
   fi
 
-  unit=${place:0:1}           
-  half=${place:1:1}
-  base=${place:2:1}
+  local unit=${roman_array[place]:0:1}           
+  local half=${roman_array[place]:1:1}
+  local base=${roman_array[place]:2:1}
 
   if [[ ${half_form} == FALSE ]] ; then
     half="${base}${base}${base}${base}${base}"
@@ -174,6 +208,7 @@ function digit2roman() {
 
   case ${digit} in
     1|2|3 )
+      local i
       for ((i = digit; i>0; i--)) ; do
         echo -n "${base}"
       done
@@ -216,7 +251,6 @@ function digit2roman() {
       fi
       ;;
   esac
-
 }
 
 
