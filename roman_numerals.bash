@@ -10,7 +10,6 @@ RN_MAX_APOSTROPHUS=399999    # Based upon Etruscan numbers
 declare -a units_apostrophus=( I X C "(I)" "((I))" "(((I)))" )
 declare -a halfs_apostrophus=( S V D  "I)"   "I))"    "I)))" )
 
-
 declare -a units=( ${units_modern[@]} )
 declare -a halfs=( ${halfs_modern[@]} )
 
@@ -20,17 +19,14 @@ RN_STYLE=MODERN
 RN_MAX=${RN_MAX_MODERN}
 RN_MAX_DIGIT_VALUE=100000    # APOSTROPHUS: (((I)))
 
-RN_FORMAT=STANDARD
-# STANDARD, ADDITIVE_ONLY, OPTIMAL=
+RN_FORM=STANDARD
+RN_SIMPLIFED=4                # Default
+# STANDARD, ADDITIVE_ONLY, SIMPLIFIED
 
-
-# Format Variants: These are the DEFAULTS
-HALF_FORM=TRUE                 # TRUE ->  V, L, D
-SUBTRACTIVE_FORM=TRUE
-  SUBTRACTIVE_FORM_4=TRUE      # TRUE= "IV", otherwise:   "IIII"
-  SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:  "IIX"
-  SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX", otherwise:  "VIIII"
-
+#
+declare MAX_DENOMINATOR=10        # This is the default
+declare -a DENOMINATORS=( 1000 500 200 100 50 20 10 )
+declare -a EXCEL_DENOMINATORS=( 1000 200 100 20 10 )
   # Distance: 1/10, 1/20, 1/100, 1/200, 1/1000
   SUBTRACTIVE_FORM_DISTANCE=1  # (1: 1/10, 3: 1/100, 5: 1/1000)
     # Distance is used to determine how aggressive we use the subtractive form
@@ -42,13 +38,15 @@ SUBTRACTIVE_FORM=TRUE
     # 2:  499 => XD IX     (-10 + 500)  + (-1 + 10)
     # 3:  499 -> ID        (-1 + 500)
 
-EXCEL_FORM=
-#0: SUBTRACTIVE_FORM_HALF=MUTE  SUBTRACTIVE_FORM_DISTANCE=1
-#1: SUBTRACTIVE_FORM_HALF=TRUE  SUBTRACTIVE_FORM_DISTANCE=1
-#2: SUBTRACTIVE_FORM_HALF=FALSE SUBTRACTIVE_FORM_DISTANCE=2
-#3: SUBTRACTIVE_FORM_HALF=TRUE  SUBTRACTIVE_FORM_DISTANCE=2
-#4: SUBTRACTIVE_FORM_HALF=TRUE  SUBTRACTIVE_FORM_DISTANCE=3
 
+
+
+# Format Variants: These are the DEFAULTS
+HALF_FORM=TRUE                 # TRUE ->  V, L, D
+SUBTRACTIVE_FORM=TRUE
+  SUBTRACTIVE_FORM_4=TRUE      # TRUE= "IV", otherwise:   "IIII"
+  SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:  "IIX"
+  SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX", otherwise:  "VIIII"
 
 
 
@@ -62,7 +60,7 @@ RN_OFS=" "
 #    - SUBTRACTIVE_FORM=FALSE
 #    - HALF_FORM=TRUE
 #    - SUBTRACTIVE_FORM_DISTANCE= {0,1}
-# 3. OPTIMAL= (SIMPLIED == OPTIMAL=4)
+# 3. SIMPLIFIED=
 #    - SUBRACTIVE_FORM=TRUE
 #    - HALF_FORM=TRUE
 #    - SUBTRACTIVE_FORM_DISTANCE=
@@ -73,31 +71,16 @@ RN_OFS=" "
 #    SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
 
 
-function list2roman_xxx (){
-  local count=${#}
-  for num in "${@}" ; do
-     arabic2roman_xxx ${num}
-     echo -n "${RN_OFS}"
-  done
-  echo 
-}
+
+# roman_digit          # roman_digit
+# roman value [form]   # arabic2roman_algorithm
+# arabic2roman
 
 
-# arabic2roman:  by digits
-function arabic2roman_xxx() {
-  local number="$1"
-  local count=${#number}
+function roman() {
+  # what if the value is greater then Classic, etc.
 
-  local c d
-  for ((c=0, d=${count}; c < ${count}; c++, d--)) ; do
-    local digit=${number:$c:1}
-    digit2roman $digit d
-  done
-}
-
-
-function arabic2roman_algorithm() {
-  local value="$1"
+  local value="${1:-0}"
 
   local lower
   local upper
@@ -115,29 +98,45 @@ function arabic2roman_algorithm() {
     
     (( place = 1 ))
 
-    if [[ -n ${EXTENDED_SUBRACTION} ]] ; then
-#   if ((DISTRANCE > 0))
-#                        4   3   2  1  0
-#     local distance=(1000 200 100 20 10)      
-#     
-#     max = distance[4 - DISTANCE]
-#     for(( index=first, index <=1, index-- ))
-#         i=distance[index]
-#     ${max:0:1} != 1  -- for the FORM_8
-#     local distance=(1000 500 200 100 50 20 10)
+    if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
+      ## IF FORM is SIMPLIED, we presume the other ENVs are set correct
+      local denominator
+#     for denominator in ${DENOMINATORS[@]} ; do
+#       if (( denominator > MAX_DENOMINATOR )) ; then
+#           continue 
+#       fi
 #
-#    if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]]
-#        distance=(1000 500 200 100 50 20 10)
-#        max=distance[6 - DISTANCE]
-#    else
-#        distance=(1000 200 100 20 10)
-#                     4   3   2  1  0
-#                ->   6   4   3  1  0
-#        max = distance[4 - DISTANCE]
-#    fi
+#       if [[ ${HALF_FORM} == FALSE ]] ; then
+          # 1/2 = .5
+#         (( ${denominator:0:1} == 2 )) && continue
+#       if
+#
+#       if [[ ${SUBTRACTIVE_FORM_8} == FALSE ]] ; then
+          #  1/5 == 1/20 == .2
+#         (( ${denominator:0:1} == 5 )) && continue
+#       fi
+#
+#       (( i = upper / denominator ))
+#       ((i >= lower)) && break 1
+#
+#        if ((value + i >= upper )); then
+#          roman_digit i ${place} 
+#          roman_digit 1 ${#upper} 
+#
+#          (( value = value - (upper - i) ))
+#          continue 2
+#        fi
+#        if [[ ${HALF_FORM} == TRUE ]] && ((value < half))
+#          if ((value + i >= half )); then
+#            roman_digit i ${place} 
+#            roman_digit 5 ${#half} 
+#
+#            (( value = value - (half - i) ))
+#            continue 2
+#          fi
+#        fi
 
-# now an issue with HALF_FORM...
-#
+
 
       # distance
       #        4  2   0 
@@ -154,8 +153,8 @@ function arabic2roman_algorithm() {
         fi
 
         if ((value + i >= upper )); then
-          digit2roman 1 ${place} 
-          digit2roman 1 ${#upper} 
+          roman_digit 1 ${place} 
+          roman_digit 1 ${#upper} 
 
           (( value = value - (upper - i) ))
           continue 2
@@ -164,8 +163,8 @@ function arabic2roman_algorithm() {
 
         if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
           if ((value + i*2 >= upper )); then
-            digit2roman 2 ${place} 
-            digit2roman 1 ${#upper} 
+            roman_digit 2 ${place} 
+            roman_digit 1 ${#upper} 
 
             (( value = value - (upper - i*2) ))
             continue 2
@@ -174,18 +173,18 @@ function arabic2roman_algorithm() {
 
 
         if (( value + i * 5 >= upper)) ; then 
-          digit2roman 5 ${place}
-          digit2roman 1 ${#upper}; 
+          roman_digit 5 ${place}
+          roman_digit 1 ${#upper}; 
           (( value = value - (upper - i*5) ))
           continue 2
         fi
        
 
         ##############################################
-        if [[ HALF_FORM == TRUE ]] && ((value < half)) ; then
+        if [[ ${HALF_FORM} == TRUE ]] && ((value < half)) ; then
           if ((value + i >= half )); then
-            digit2roman 1 ${place} 
-            digit2roman 5 ${#half}
+            roman_digit 1 ${place} 
+            roman_digit 5 ${#half}
 
             (( value = value - (half - i) ))
             continue 2
@@ -193,8 +192,8 @@ function arabic2roman_algorithm() {
 
           if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
             if ((value + i*2 >= half )); then
-              digit2roman 2 ${place} 
-              digit2roman 5 ${#half} 
+              roman_digit 2 ${place} 
+              roman_digit 5 ${#half} 
 
               (( value = value - (half - i*2) ))
               continue 2
@@ -203,8 +202,8 @@ function arabic2roman_algorithm() {
 
           if (( value + i * 5 >= half)) ; then 
 #            echo $value $i $half $place $upper
-            digit2roman 5 ${place}
-            digit2roman 5 ${#half}
+            roman_digit 5 ${place}
+            roman_digit 5 ${#half}
             (( value = value - (half - i * 5) ))
             continue 2
           fi
@@ -215,11 +214,11 @@ function arabic2roman_algorithm() {
       done
     fi
 
-    digit2roman ${value:0:1} ${#value}
+    roman_digit ${value:0:1} ${#value}
     (( value = value % lower ))
   done
   # This is the last digit, or zero
-  digit2roman ${value:0:1} ${#value}
+  roman_digit ${value:0:1} ${#value}
   # (( value = value % lower ))
   echo
 }
@@ -230,7 +229,13 @@ function arabic2roman_algorithm() {
 function arabic2roman(){
   # Converts an arabic number to a roman number
 
-  local number="$1"
+  local number="${1:-0}"
+  local simplified="${2:-0}"
+
+  if (( ${simplified} != 0 )) ; then
+    set_form SIMPLIFIED ${simplified}
+  fi
+
   local group3 group2 group1
   
   if ((number > ${RN_MAX})) ; then
@@ -248,7 +253,7 @@ function arabic2roman(){
   case ${RN_STYLE} in
 
     ( "EARLY"  | "MODERN" ) 
-      arabic2roman_algorithm ${number}
+      roman ${number} ${simplified}
       ;;
 
     ( "VINCULUM" )
@@ -259,22 +264,23 @@ function arabic2roman(){
       local RN_MAX=999
       if (( group3 > 0 )) ; then
         echo -n "<vinculum>|"
-        arabic2roman_xxx $group3
+        roman ${group3} ${simplified}
+
         echo -n "|<\vinculum>"
       fi 
       if (( group2 > 0 )) ; then
         echo -n "<vinculum>"
-        arabic2roman_xxx $group2
+        roman ${group2} ${simplified}
         echo -n "<\vinculum>"
       fi  
-      arabic2roman_xxx $group1
+      roman ${group1} ${simplified}
       ;;
   
     ( "APOSTROPHUS" )
       declare -a units=( ${units_apostrophus[@]} )
       declare -a halfs=( ${halfs_apostrophus[@]} )
 
-      arabic2roman_xxx ${number}
+      roman ${number} ${simplified}
 
       declare -a units=( ${units_modern[@]} )
       declare -a halfs=( ${halfs_modern[@]} )      
@@ -286,19 +292,23 @@ function arabic2roman(){
 }
 
 
-function set_format () {
-  local _format="$1"
+function set_form () {
+  local _form="${1:-STANDARD}"
+  local _number="${2:-RN_SIMPLIFED}"
 
-  [[ -z ${_format} ]] && _format=STANDARD
-  RN_FORMAT=${_format}
+  RN_FORM=${_form}
+  if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
+    RN_SIMPLIFIED=${_number}
+    MAX_DENOMINATOR=${EXCEL_DENOMINTATORS[4-${RN_SIMPLIFIED}]}
+  else
+    MAX_DENOMINATOR=10
+  fi
 }
 
 # MODERN, VINCULUM, EARLY, APOSTROPHUS
 function set_style() {
-  local _style="$1"
+  local _style="${1:-MODERN}"
   
-  [[ -z ${_style} ]] && _style=MODERN 
-
   RN_STYLE=${_style}
 
   local _max="RN_MAX_${_style}"
@@ -310,7 +320,7 @@ function set_defaults() {
   set_half_form TRUE
   set_subtractive_form TRUE
   set_style MODERN
-  set_format 
+  set_form RN_SIMPLIFED
 }
 
 function set_subtractive_form() {
@@ -342,7 +352,7 @@ function set_half_form() {
 set_defaults
 
 
-function digit2roman() {
+function roman_digit() {
   local digit=$1
   local place=$2
 
@@ -405,5 +415,24 @@ function digit2roman() {
 
 
 
+# arabic2roman:  by digits
+function arabic2roman_xxx() {
+  local number="$1"
+  local count=${#number}
+
+  local c d
+  for ((c=0, d=${count}; c < ${count}; c++, d--)) ; do
+    local digit=${number:$c:1}
+    roman_digit $digit d
+  done
+}
 
 
+function list2roman_xxx (){
+  local count=${#}
+  for num in "${@}" ; do
+     arabic2roman_xxx ${num}
+     echo -n "${RN_OFS}"
+  done
+  echo 
+}
