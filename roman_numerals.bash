@@ -8,7 +8,7 @@ declare -a halfs_modern=(S V L D)
 RN_MAX_EARLY=899             # DCCCIXIX --- No M but a D ???
 RN_MAX_APOSTROPHUS=399999    # Based upon Etruscan numbers
 declare -a units_apostrophus=( I X C "(I)" "((I))" "(((I)))" )
-declare -a halfs_apostrophus=( S V D  "I)"   "I))"    "I)))" )
+declare -a halfs_apostrophus=( S V L  "I)"   "I))"    "I)))" )
 
 declare -a units=( ${units_modern[@]} )
 declare -a halfs=( ${halfs_modern[@]} )
@@ -81,6 +81,7 @@ function roman() {
   # what if the value is greater then Classic, etc.
 
   local value="${1:-0}"
+  local simplified="${2:-0}"
 
   local lower
   local upper
@@ -99,7 +100,7 @@ function roman() {
     (( place = 1 ))
 
     if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
-      ## IF FORM is SIMPLIED, we presume the other ENVs are set correct
+      ## IF FORM is SIMPLIFIED, we presume the other ENVs are set correct
       local denominator
 #     for denominator in ${DENOMINATORS[@]} ; do
 #       if (( denominator > MAX_DENOMINATOR )) ; then
@@ -320,7 +321,7 @@ function set_defaults() {
   set_half_form TRUE
   set_subtractive_form TRUE
   set_style MODERN
-  set_form RN_SIMPLIFED
+  set_form STANDARD
 }
 
 function set_subtractive_form() {
