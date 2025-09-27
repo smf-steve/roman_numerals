@@ -86,12 +86,6 @@ function roman() {
   local value="${1:-0}"
   local simplified="${2:-0}"
 
-  local lower
-  local upper
-  local half
-  local i
-  local place
-
   if (( value > RN_MAX )) ; then
     echo "Error: $value > $RN_MAX" >2
     return 1
@@ -102,21 +96,21 @@ function roman() {
       continue
     fi
 
+
+    local lower
+    local upper
+    local half
+
     (( upper = lower * 10 ))
     (( half  = lower * 5  ))
     
-    (( place = 1 ))
-
-    if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
-      # If FORM is STANDARD, ADDITIVE_ONLY, GREEDY.. don't use this portion of the code
-      # If FORM is Subtractive Only, then maybe?
-      # Perhaps this becomes a subroutine to be called as required
-      # not the issue is that "value" is updated
-
+    if [[ ${MAX_DENOMINATOR} != 10 ]] ; then
       local denominator
+      local i
 
       for denominator in ${DENOMINATORS[@]} ; do
         (( denominator > MAX_DENOMINATOR )) && continue 
+
         # skip over non-applicable denominators
         case "${denominator:0:1}" in
           1 )
@@ -129,16 +123,13 @@ function roman() {
             [[ ${SUBTRACTIVE_FORM_8} == FALSE ]] && continue
             ;;
           * )
-            echo \*
+            echo \*  Error in the DENOMINATORS >&2
             return 1
             ;;
         esac
  
         (( i = upper / denominator ))
-        (( i >= lower)) && break 1
 
-#echo $i $lower $half $upper $denominator
-#echo $value $place
         if ((value + i >= upper )); then
           roman_digit ${i:0:1} ${#i} 
           roman_digit 1 ${#upper} 
@@ -156,107 +147,17 @@ function roman() {
            continue 2
          fi
         fi
-
-        (( place ++ ))
       done
     fi
 
     roman_digit ${value:0:1} ${#value}
     (( value = value % lower ))
   done
+
   # This is the last digit or zero
   roman_digit ${value:0:1} ${#value}
-  # (( value = value % lower ))
   echo
 }
-
-## 
-## 
-##       # distance
-##       #        4  2   0 
-##       for i in 1 10 100  ; do
-## 
-## #        for j in ${distance[@]} ; do
-## #           if ((j > max_distance)) ; then
-## #             continue
-## #           fi
-## #           ((i = upper / j))
-## 
-##         if ((i >= lower)) ; then
-##           break 1
-##         fi
-## 
-##         if ((value + i >= upper )); then
-##           roman_digit 1 ${place} 
-##           roman_digit 1 ${#upper} 
-## 
-##           (( value = value - (upper - i) ))
-##           continue 2
-##         fi
-## 
-## 
-##         if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
-##           if ((value + i*2 >= upper )); then
-##             roman_digit 2 ${place} 
-##             roman_digit 1 ${#upper} 
-## 
-##             (( value = value - (upper - i*2) ))
-##             continue 2
-##           fi
-##         fi
-## 
-## 
-##         if (( value + i * 5 >= upper)) ; then 
-##           roman_digit 5 ${place}
-##           roman_digit 1 ${#upper}; 
-##           (( value = value - (upper - i*5) ))
-##           continue 2
-##         fi
-##        
-## 
-##         ##############################################
-##         if [[ ${HALF_FORM} == TRUE ]] && ((value < half)) ; then
-##           if ((value + i >= half )); then
-##             roman_digit 1 ${place} 
-##             roman_digit 5 ${#half}
-## 
-##             (( value = value - (half - i) ))
-##             continue 2
-##           fi
-## 
-##           if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
-##             if ((value + i*2 >= half )); then
-##               roman_digit 2 ${place} 
-##               roman_digit 5 ${#half} 
-## 
-##               (( value = value - (half - i*2) ))
-##               continue 2
-##             fi
-##           fi
-## 
-##           if (( value + i * 5 >= half)) ; then 
-## #            echo $value $i $half $place $upper
-##             roman_digit 5 ${place}
-##             roman_digit 5 ${#half}
-##             (( value = value - (half - i * 5) ))
-##             continue 2
-##           fi
-##         fi
-##         ##############################################
-## 
-##         (( place ++ ))
-##       done
-##     fi
-## 
-##     roman_digit ${value:0:1} ${#value}
-##     (( value = value % lower ))
-##   done
-##   # This is the last digit, or zero
-##   roman_digit ${value:0:1} ${#value}
-##   # (( value = value % lower ))
-##   echo
-## }
-
 
 
 
