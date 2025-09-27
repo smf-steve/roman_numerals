@@ -89,8 +89,6 @@ function roman() {
   local lower
   local upper
   local half
-  local i
-  local place
 
   if (( value > RN_MAX )) ; then
     echo "Error: $value > $RN_MAX" >2
@@ -105,15 +103,9 @@ function roman() {
     (( upper = lower * 10 ))
     (( half  = lower * 5  ))
     
-    (( place = 1 ))
-
-    if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
-      # If FORM is STANDARD, ADDITIVE_ONLY, GREEDY.. don't use this portion of the code
-      # If FORM is Subtractive Only, then maybe?
-      # Perhaps this becomes a subroutine to be called as required
-      # not the issue is that "value" is updated
-
+    if (( ${MAX_DENOMINATOR} != 10 )) ; then
       local denominator
+      local i
 
       for denominator in ${DENOMINATORS[@]} ; do
         (( denominator > MAX_DENOMINATOR )) && continue 
@@ -137,8 +129,6 @@ function roman() {
         (( i = upper / denominator ))
         (( i >= lower)) && break 1
 
-#echo $i $lower $half $upper $denominator
-#echo $value $place
         if ((value + i >= upper )); then
           roman_digit ${i:0:1} ${#i} 
           roman_digit 1 ${#upper} 
@@ -156,17 +146,15 @@ function roman() {
            continue 2
          fi
         fi
-
-        (( place ++ ))
       done
     fi
 
     roman_digit ${value:0:1} ${#value}
     (( value = value % lower ))
   done
+
   # This is the last digit or zero
   roman_digit ${value:0:1} ${#value}
-  # (( value = value % lower ))
   echo
 }
 
