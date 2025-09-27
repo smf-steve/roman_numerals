@@ -1,5 +1,9 @@
 #! /bin/bash
 
+# set-form must be called to set things correctly for SIMPLIFIED
+
+
+
 RN_MAX_MODERN=3999           # M for '1000' was not in use until the Medieval period).
 RN_MAX_VINCULUM=999999999    # Groups of xxx,yyy,zzz
 declare -a units_modern=(I X C M)
@@ -13,6 +17,9 @@ declare -a halfs_apostrophus=( S V L  "I)"   "I))"    "I)))" )
 declare -a units=( ${units_modern[@]} )
 declare -a halfs=( ${halfs_modern[@]} )
 
+RN_OFS=" "
+
+
 RN_STYLE=MODERN
 # MODERN, VINCULUM, EARLY, APOSTROPHUS
 
@@ -20,51 +27,49 @@ RN_MAX=${RN_MAX_MODERN}
 RN_MAX_DIGIT_VALUE=100000    # APOSTROPHUS: (((I)))
 
 RN_FORM=STANDARD
-RN_SIMPLIFED=4                # Default
+RN_MAX_SIMPLIFIED=4               
 # STANDARD, ADDITIVE_ONLY, SIMPLIFIED
 
-#
 declare MAX_DENOMINATOR=10        # This is the default
 declare -a DENOMINATORS=( 1000 500 200 100 50 20 10 )
 declare -a EXCEL_DENOMINATORS=( 1000 200 100 20 10 )
-  # Distance: 1/10, 1/20, 1/100, 1/200, 1/1000
-  SUBTRACTIVE_FORM_DISTANCE=1  # (1: 1/10, 3: 1/100, 5: 1/1000)
-    # Distance is used to determine how aggressive we use the subtractive form
-    # 1:  999 => CM XL IX  (-100 + 1000) + (-10 + 100) + (-1 + 10)
-    # 2:  999 => XM IC     (-10 + 1000) + (-1 + 100)
-    # 3:  999 => IM        (-1 + 1000)
-  SUBTRACTIVE_FORM_HALF=FALSE
-    # 1:  499 => CD XL IX  (-100 + 500) + (-10 + 100) + (-1 + 10)
-    # 2:  499 => XD IX     (-10 + 500)  + (-1 + 10)
-    # 3:  499 -> ID        (-1 + 500)
-
-
-
+  # The denominator is used to determine how aggressive the subtractive form is applied
+  # Excel Form range: 0..4
+  # 0:    9 => IX  |  1/10   * 10   = 1   | (-1 + 10   =   9)
+  # 1:   95 => VC  |  1/20   * 100  = 5   | (-5 + 100  =  95)
+  # 2:   99 => IC  |  1/100  * 100  = 1   | (-1 + 100  =  99)
+  # 3:  995 => VM  |  1/200  * 1000 = 5   | (-5 + 1000 = 995)
+  # 4:  999 => IM  |  1/1000 * 1000 = 1   | (-1 + 1000 = 999)
+  #
+  # https://support.microsoft.com/en-us/office/roman-function-d6b0b99e-de46-4704-a518-b45a0f8b56f5
 
 # Format Variants: These are the DEFAULTS
 HALF_FORM=TRUE                 # TRUE ->  V, L, D
 SUBTRACTIVE_FORM=TRUE
-  SUBTRACTIVE_FORM_4=TRUE      # TRUE= "IV", otherwise:   "IIII"
-  SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:  "IIX"
-  SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX", otherwise:  "VIIII"
+  SUBTRACTIVE_FORM_4=TRUE      # TRUE= "IV",   otherwise:   "IIII"
+  SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:    "IIX"
+  SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX",   otherwise:  "VIIII"
 
 
-
-RN_OFS=" "
+# Values associated with various forms:
+#
 # 1. STANDARD, CLASSIC 
 #    - SUBTRACTIVE_FORM=TRUE
 #    - HALF_FORM=TRUE
-#    - SUBTRACTIVE_FORM_DISTANCE= {0, 1}
+#    - MAX_DENOMINATOR=10
 #    - SUBTRACTIVE_FORM_8=FALSE
+#
 # 2. ADDITIVE_ONLY
 #    - SUBTRACTIVE_FORM=FALSE
 #    - HALF_FORM=TRUE
-#    - SUBTRACTIVE_FORM_DISTANCE= {0,1}
-# 3. SIMPLIFIED=
+#    - MAX_DENOMINATOR=10
+#
+# 3. SIMPLIFIED=4
 #    - SUBRACTIVE_FORM=TRUE
 #    - HALF_FORM=TRUE
-#    - SUBTRACTIVE_FORM_DISTANCE=
-
+#    - MAX_DENOMINATOR=1000    # as computed
+#      * ${EXCEL_DENOMINATORS[4-${RN_MAX_SIMPLIFIED}]}
+#
 # FREE ENVIRONMENT VARABLES
 #    SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
 #    SUBTRACTIVE_FORM_8=TRUE      # 8 = IIX
@@ -78,8 +83,6 @@ RN_OFS=" "
 
 
 function roman() {
-  # what if the value is greater then Classic, etc.
-
   local value="${1:-0}"
   local simplified="${2:-0}"
 
@@ -88,6 +91,11 @@ function roman() {
   local half
   local i
   local place
+
+  if (( value > RN_MAX )) ; then
+    echo "Error: $value > $RN_MAX" >2
+    return 1
+  fi
 
   for ((lower = RN_MAX_DIGIT_VALUE; lower > 1 ; lower = lower / 10 )); do
     if (( lower > value )) ; then
@@ -100,116 +108,54 @@ function roman() {
     (( place = 1 ))
 
     if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
-      ## IF FORM is SIMPLIFIED, we presume the other ENVs are set correct
+      # If FORM is STANDARD, ADDITIVE_ONLY, GREEDY.. don't use this portion of the code
+      # If FORM is Subtractive Only, then maybe?
+      # Perhaps this becomes a subroutine to be called as required
+      # not the issue is that "value" is updated
+
       local denominator
-#     for denominator in ${DENOMINATORS[@]} ; do
-#       if (( denominator > MAX_DENOMINATOR )) ; then
-#           continue 
-#       fi
-#
-#       if [[ ${HALF_FORM} == FALSE ]] ; then
-          # 1/2 = .5
-#         (( ${denominator:0:1} == 2 )) && continue
-#       if
-#
-#       if [[ ${SUBTRACTIVE_FORM_8} == FALSE ]] ; then
-          #  1/5 == 1/20 == .2
-#         (( ${denominator:0:1} == 5 )) && continue
-#       fi
-#
-#       (( i = upper / denominator ))
-#       ((i >= lower)) && break 1
-#
-#        if ((value + i >= upper )); then
-#          roman_digit i ${place} 
-#          roman_digit 1 ${#upper} 
-#
-#          (( value = value - (upper - i) ))
-#          continue 2
-#        fi
-#        if [[ ${HALF_FORM} == TRUE ]] && ((value < half))
-#          if ((value + i >= half )); then
-#            roman_digit i ${place} 
-#            roman_digit 5 ${#half} 
-#
-#            (( value = value - (half - i) ))
-#            continue 2
-#          fi
-#        fi
 
+      for denominator in ${DENOMINATORS[@]} ; do
+        (( denominator > MAX_DENOMINATOR )) && continue 
+        # skip over non-applicable denominators
+        case "${denominator:0:1}" in
+          1 )
+            :
+            ;;
+          2 )  # 1/2xxxx
+            [[ ${HALF_FORM} == FALSE ]] && continue
+            ;;
+          5 )  # 1/5xxxx
+            [[ ${SUBTRACTIVE_FORM_8} == FALSE ]] && continue
+            ;;
+          * )
+            echo \*
+            return 1
+            ;;
+        esac
+ 
+        (( i = upper / denominator ))
+        (( i >= lower)) && break 1
 
-
-      # distance
-      #        4  2   0 
-      for i in 1 10 100  ; do
-
-#        for j in ${distance[@]} ; do
-#           if ((j > max_distance)) ; then
-#             continue
-#           fi
-#           ((i = upper / j))
-
-        if ((i >= lower)) ; then
-          break 1
-        fi
-
+#echo $i $lower $half $upper $denominator
+#echo $value $place
         if ((value + i >= upper )); then
-          roman_digit 1 ${place} 
+          roman_digit ${i:0:1} ${#i} 
           roman_digit 1 ${#upper} 
 
           (( value = value - (upper - i) ))
           continue 2
         fi
 
-
-        if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
-          if ((value + i*2 >= upper )); then
-            roman_digit 2 ${place} 
-            roman_digit 1 ${#upper} 
-
-            (( value = value - (upper - i*2) ))
-            continue 2
-          fi
-        fi
-
-
-        if (( value + i * 5 >= upper)) ; then 
-          roman_digit 5 ${place}
-          roman_digit 1 ${#upper}; 
-          (( value = value - (upper - i*5) ))
-          continue 2
-        fi
-       
-
-        ##############################################
         if [[ ${HALF_FORM} == TRUE ]] && ((value < half)) ; then
-          if ((value + i >= half )); then
-            roman_digit 1 ${place} 
-            roman_digit 5 ${#half}
+         if ((value + i >= half )); then
+           roman_digit ${i:0:1} ${#i} 
+           roman_digit 5 ${#half} 
 
-            (( value = value - (half - i) ))
-            continue 2
-          fi
-
-          if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
-            if ((value + i*2 >= half )); then
-              roman_digit 2 ${place} 
-              roman_digit 5 ${#half} 
-
-              (( value = value - (half - i*2) ))
-              continue 2
-            fi
-          fi
-
-          if (( value + i * 5 >= half)) ; then 
-#            echo $value $i $half $place $upper
-            roman_digit 5 ${place}
-            roman_digit 5 ${#half}
-            (( value = value - (half - i * 5) ))
-            continue 2
-          fi
+           (( value = value - (half - i) ))
+           continue 2
+         fi
         fi
-        ##############################################
 
         (( place ++ ))
       done
@@ -218,11 +164,98 @@ function roman() {
     roman_digit ${value:0:1} ${#value}
     (( value = value % lower ))
   done
-  # This is the last digit, or zero
+  # This is the last digit or zero
   roman_digit ${value:0:1} ${#value}
   # (( value = value % lower ))
   echo
 }
+
+## 
+## 
+##       # distance
+##       #        4  2   0 
+##       for i in 1 10 100  ; do
+## 
+## #        for j in ${distance[@]} ; do
+## #           if ((j > max_distance)) ; then
+## #             continue
+## #           fi
+## #           ((i = upper / j))
+## 
+##         if ((i >= lower)) ; then
+##           break 1
+##         fi
+## 
+##         if ((value + i >= upper )); then
+##           roman_digit 1 ${place} 
+##           roman_digit 1 ${#upper} 
+## 
+##           (( value = value - (upper - i) ))
+##           continue 2
+##         fi
+## 
+## 
+##         if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
+##           if ((value + i*2 >= upper )); then
+##             roman_digit 2 ${place} 
+##             roman_digit 1 ${#upper} 
+## 
+##             (( value = value - (upper - i*2) ))
+##             continue 2
+##           fi
+##         fi
+## 
+## 
+##         if (( value + i * 5 >= upper)) ; then 
+##           roman_digit 5 ${place}
+##           roman_digit 1 ${#upper}; 
+##           (( value = value - (upper - i*5) ))
+##           continue 2
+##         fi
+##        
+## 
+##         ##############################################
+##         if [[ ${HALF_FORM} == TRUE ]] && ((value < half)) ; then
+##           if ((value + i >= half )); then
+##             roman_digit 1 ${place} 
+##             roman_digit 5 ${#half}
+## 
+##             (( value = value - (half - i) ))
+##             continue 2
+##           fi
+## 
+##           if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
+##             if ((value + i*2 >= half )); then
+##               roman_digit 2 ${place} 
+##               roman_digit 5 ${#half} 
+## 
+##               (( value = value - (half - i*2) ))
+##               continue 2
+##             fi
+##           fi
+## 
+##           if (( value + i * 5 >= half)) ; then 
+## #            echo $value $i $half $place $upper
+##             roman_digit 5 ${place}
+##             roman_digit 5 ${#half}
+##             (( value = value - (half - i * 5) ))
+##             continue 2
+##           fi
+##         fi
+##         ##############################################
+## 
+##         (( place ++ ))
+##       done
+##     fi
+## 
+##     roman_digit ${value:0:1} ${#value}
+##     (( value = value % lower ))
+##   done
+##   # This is the last digit, or zero
+##   roman_digit ${value:0:1} ${#value}
+##   # (( value = value % lower ))
+##   echo
+## }
 
 
 
@@ -295,12 +328,11 @@ function arabic2roman(){
 
 function set_form () {
   local _form="${1:-STANDARD}"
-  local _number="${2:-RN_SIMPLIFED}"
+  local _number="${2:-${RN_MAX_SIMPLIFIED}}"
 
   RN_FORM=${_form}
   if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
-    RN_SIMPLIFIED=${_number}
-    MAX_DENOMINATOR=${EXCEL_DENOMINTATORS[4-${RN_SIMPLIFIED}]}
+    MAX_DENOMINATOR=${EXCEL_DENOMINATORS[4-${RN_MAX_SIMPLIFIED}]}
   else
     MAX_DENOMINATOR=10
   fi
@@ -437,3 +469,4 @@ function list2roman_xxx (){
   done
   echo 
 }
+
