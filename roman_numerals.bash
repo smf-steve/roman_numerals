@@ -3,6 +3,16 @@
 # set-form must be called to set things correctly for SIMPLIFIED
 
 
+# arabic2roman
+# roman value [form]
+# roman_digit
+
+# roman_defaults_set
+# roman_form_half_set
+# roman_form_subtractive_set
+# roman_form_set
+# roman_style_set
+
 
 RN_MAX_MODERN=3999           # M for '1000' was not in use until the Medieval period).
 RN_MAX_VINCULUM=999999999    # Groups of xxx,yyy,zzz
@@ -17,8 +27,6 @@ declare -a halfs_apostrophus=( S V L  "I)"   "I))"    "I)))" )
 declare -a units=( ${units_modern[@]} )
 declare -a halfs=( ${halfs_modern[@]} )
 
-RN_OFS=" "
-
 
 RN_STYLE=MODERN
 # MODERN, VINCULUM, EARLY, APOSTROPHUS
@@ -30,10 +38,10 @@ RN_FORM=STANDARD
 RN_MAX_SIMPLIFIED=4               
 # STANDARD, ADDITIVE_ONLY, SIMPLIFIED
 
-declare MAX_DENOMINATOR_DEFAULT=10
-declare MAX_DENOMINATOR=10        
-declare -a DENOMINATORS=( 1000 500 200 100 50 20 10 )
-declare -a EXCEL_DENOMINATORS=( 1000 200 100 20 10 )
+declare RN_MAX_DENOMINATOR_DEFAULT=10
+declare RN_MAX_DENOMINATOR=10        
+declare -a RN_DENOMINATORS=( 1000 500 200 100 50 20 10 )
+declare -a RN_EXCEL_DENOMINATORS=( 1000 200 100 20 10 )
   # The denominator is used to determine how aggressive the subtractive form is applied
   # Excel Form range: 0..4
   # 0:    9 => IX  |  1/10   * 10   = 1   | (-1 + 10   =   9)
@@ -44,50 +52,52 @@ declare -a EXCEL_DENOMINATORS=( 1000 200 100 20 10 )
   #
   # https://support.microsoft.com/en-us/office/roman-function-d6b0b99e-de46-4704-a518-b45a0f8b56f5
 
+
+
 # Format Variants: These are the DEFAULTS
-HALF_FORM=TRUE                 # TRUE ->  V, L, D
-SUBTRACTIVE_FORM=TRUE
-  SUBTRACTIVE_FORM_4=TRUE      # TRUE= "IV",   otherwise:   "IIII"
-  SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:    "IIX"
-  SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX",   otherwise:  "VIIII"
+RN_HALF_FORM=TRUE                 # TRUE ->  V, L, D
+RN_SUBTRACTIVE_FORM=TRUE
+  RN_SUBTRACTIVE_FORM_4=TRUE      # TRUE= "IV",   otherwise:   "IIII"
+  RN_SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:    "IIX"
+  RN_SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX",   otherwise:  "VIIII"
 
 
 # Values associated with various forms:
 #
-# 1. STANDARD, CLASSIC 
-#    - SUBTRACTIVE_FORM=TRUE
-#    - HALF_FORM=TRUE
-#    - MAX_DENOMINATOR=10
-#    - SUBTRACTIVE_FORM_8=FALSE
-#
-# 2. ADDITIVE_ONLY
-#    - SUBTRACTIVE_FORM=FALSE
-#    - HALF_FORM=TRUE
+# 1. STANDARD, CLASSIC, SIMPLIFIED=0
 #    - MAX_DENOMINATOR=10
 #
-# 3. SIMPLIFIED=4
-#    - SUBRACTIVE_FORM=TRUE
-#    - HALF_FORM=TRUE
-#    - MAX_DENOMINATOR=1000    # as computed
-#      * ${EXCEL_DENOMINATORS[4-${RN_MAX_SIMPLIFIED}]}
-#
+# 2. SIMPLIFIED=
+#    - RN_SUBRACTIVE_FORM=TRUE
+#    - RN_HALF_FORM=TRUE
+#    - RN_MAX_DENOMINATOR= {as computed}
+#      * ${RN_EXCEL_DENOMINATORS[4-${RN_MAX_SIMPLIFIED}]}
+#    - SIMPLIFIED=0
+#      - RN_MAX_DENOMINATOR=10
+#    - SIMPLIFIED=1
+#      - RN_MAX_DENOMINATOR=20
+#    - SIMPLIFIED=2
+#      - RN_MAX_DENOMINATOR=100
+#    - SIMPLIFIED=3
+#      - RN_MAX_DENOMINATOR=200
+#    - SIMPLIFIED=3
+#      - RN_MAX_DENOMINATOR=1000
+
+
+
+
 # FREE ENVIRONMENT VARABLES
-#    SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
-#    SUBTRACTIVE_FORM_8=TRUE      # 8 = IIX
-#    SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
+#    RN_SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
+#    RN_SUBTRACTIVE_FORM_8=TRUE      # 8 = IIX
+#    RN_SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
 
-
-
-# roman_digit          # roman_digit
-# roman value [form]   # arabic2roman_algorithm
-# arabic2roman
 
 
 function roman() {
   local value="${1:-0}"
   local simplified="${2:-0}"
 
-  MAX_DENOMINATOR=${EXCEL_DENOMINATORS[4-${simplified}]}
+  RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[4-${simplified}]}
 
   local lower
   local upper
@@ -111,19 +121,19 @@ function roman() {
 
 
     # Following handles the Subtractive forms
-    if [[ SUBTRACTIVE_FORM == TRUE ]] ; then 
-      for denominator in ${DENOMINATORS[@]} ; do
-        (( denominator > MAX_DENOMINATOR )) && continue 
+    if [[ ${RN_SUBTRACTIVE_FORM} == TRUE ]] ; then 
+      for denominator in ${RN_DENOMINATORS[@]} ; do
+        (( denominator > RN_MAX_DENOMINATOR )) && continue 
         # skip over non-applicable denominators
         case "${denominator:0:1}" in
           1 )
             :
             ;;
           2 )  # 1/2xxxx
-            [[ ${HALF_FORM} == FALSE ]] && continue
+            [[ ${RN_HALF_FORM} == FALSE ]] && continue
             ;;
           5 )  # 1/5xxxx
-            [[ ${SUBTRACTIVE_FORM_8} == FALSE ]] && continue
+            [[ ${RN_SUBTRACTIVE_FORM_8} == FALSE ]] && continue
             ;;
           * )
             echo \*
@@ -142,7 +152,7 @@ function roman() {
           continue 2
         fi
 
-        if [[ ${HALF_FORM} == TRUE ]] && ((value < half)) ; then
+        if [[ ${RN_HALF_FORM} == TRUE ]] && ((value < half)) ; then
          if ((value + i >= half )); then
            roman_digit ${i:0:1} ${#i} 
            roman_digit 5 ${#half} 
@@ -158,7 +168,7 @@ function roman() {
     (( value = value % lower ))
   done
 
-  # This is the signal digit or zero
+  # This is the single digit or zero
   roman_digit ${value:0:1} ${#value}
 
   echo
@@ -172,7 +182,7 @@ function arabic2roman(){
   local simplified="${2:-0}"
 
   if (( ${simplified} != 0 )) ; then
-    set_form SIMPLIFIED ${simplified}
+    roman_form_set SIMPLIFIED ${simplified}
   fi
 
   local group3 group2 group1
@@ -231,7 +241,39 @@ function arabic2roman(){
 }
 
 
-function set_form () {
+function roman_defaults_set() {
+  roman_form_half_set        TRUE
+  roman_form_subtractive_set TRUE
+  roman_style_set            MODERN
+  roman_form_set             STANDARD
+}
+
+function roman_form_half_set() {
+  local _value="$1"
+
+  RN_HALF_FORM=TRUE
+  if [[ $_value == FALSE ]] ; then
+    RN_HALF_FORM=FALSE
+    RN_SUBRACTIVE_FORM_4=FALSE   # IV is not valid
+  fi
+}
+
+function roman_form_subtractive_set() {
+  local _value="$1"
+
+  RN_SUBTRACTIVE_FORM=TRUE      
+  RN_SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
+  RN_SUBTRACTIVE_FORM_8=FALSE     # 8 = VIII
+  RN_SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
+  if [[ $_value == FALSE ]] ; then
+    RN_SUBTRACTIVE_FORM=FALSE      
+    RN_SUBTRACTIVE_FORM_4=FALSE   # 4 = IIII
+    RN_SUBTRACTIVE_FORM_8=FALSE   # 8 = VIII
+    RN_SUBTRACTIVE_FORM_9=FALSE   # 9 = VIIII
+  fi 
+}
+
+function roman_form_set() {
   local _form="${1:-STANDARD}"
   local _number="${2:-${RN_MAX_SIMPLIFIED}}"
 
@@ -242,14 +284,15 @@ function set_form () {
 
   RN_FORM=${_form}
   if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
-    MAX_DENOMINATOR=${EXCEL_DENOMINATORS[4-${_number}]}
+    RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[4-${_number}]}
   else
-    MAX_DENOMINATOR=${MAX_DENOMINATOR_DEFAULT}
+    RN_MAX_DENOMINATOR=${RN_MAX_DENOMINATOR_DEFAULT}
   fi
 }
 
+
 # MODERN, VINCULUM, EARLY, APOSTROPHUS
-function set_style() {
+function roman_style_set() {
   local _style="${1:-MODERN}"
   
   RN_STYLE=${_style}
@@ -259,40 +302,8 @@ function set_style() {
 }
 
 
-function set_defaults() {
-  set_half_form TRUE
-  set_subtractive_form TRUE
-  set_style MODERN
-  set_form STANDARD
-}
 
-function set_subtractive_form() {
-  local _value="$1"
-
-  SUBTRACTIVE_FORM=TRUE      
-  SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
-  SUBTRACTIVE_FORM_8=FALSE     # 8 = VIII
-  SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
-  if [[ $_value == FALSE ]] ; then
-    SUBTRACTIVE_FORM=FALSE      
-    SUBTRACTIVE_FORM_4=FALSE   # 4 = IIII
-    SUBTRACTIVE_FORM_8=FALSE   # 8 = VIII
-    SUBTRACTIVE_FORM_9=FALSE   # 9 = VIIII
-  fi 
-}
-
-function set_half_form() {
-  local _value="$1"
-
-  HALF_FORM=TRUE
-  if [[ $_value == FALSE ]] ; then
-    HALF_FORM=FALSE
-    SUBRACTIVE_FORM_4=FALSE   # IV is not valid
-  fi
-}
-
-
-set_defaults
+roman_defaults_set
 
 
 function roman_digit() {
@@ -307,7 +318,7 @@ function roman_digit() {
   local half=${halfs[place]}
   local full=${units[place]}
 
-  if [[ ${HALF_FORM} == FALSE ]] ; then
+  if [[ ${RN_HALF_FORM} == FALSE ]] ; then
     half="${unit}${unit}${unit}${unit}${unit}"
   fi
 
@@ -320,7 +331,7 @@ function roman_digit() {
       ;;
 
     4 )
-      if [[ ${SUBTRACTIVE_FORM_4} == TRUE ]] ; then 
+      if [[ ${RN_SUBTRACTIVE_FORM_4} == TRUE ]] ; then 
         echo -n "${unit}${half}"
       else
         echo -n "${unit}${unit}${unit}${unit}"
@@ -339,7 +350,7 @@ function roman_digit() {
       ;;
 
     8 )
-      if [[ ${SUBTRACTIVE_FORM_8} == TRUE ]] ; then
+      if [[ ${RN_SUBTRACTIVE_FORM_8} == TRUE ]] ; then
         echo -n "${unit}${unit}${full}" 
       else
         echo -n "${half}${unit}${unit}${unit}"
@@ -347,7 +358,7 @@ function roman_digit() {
         ;; 
 
     9 )
-      if [[ ${SUBTRACTIVE_FORM_9} == TRUE ]] ; then 
+      if [[ ${RN_SUBTRACTIVE_FORM_9} == TRUE ]] ; then 
         echo -n "${unit}${full}"
       else
         echo -n "${half}${unit}${unit}${unit}${unit}"
@@ -358,19 +369,7 @@ function roman_digit() {
 
 
 
-# arabic2roman:  by digits
-function arabic2roman_xxx() {
-  local number="$1"
-  local count=${#number}
-
-  local c d
-  for ((c=0, d=${count}; c < ${count}; c++, d--)) ; do
-    local digit=${number:$c:1}
-    roman_digit $digit d
-  done
-}
-
-function arabic2roman_yyy() {
+function roman_simple() {
   local number="$1"
 
   while [[ -n "${number:0}" ]] ; do
@@ -378,15 +377,5 @@ function arabic2roman_yyy() {
     number=${number:1}
   done
   echo
-}
-
-
-function list2roman_xxx (){
-  local count=${#}
-  for num in "${@}" ; do
-     arabic2roman_xxx ${num}
-     echo -n "${RN_OFS}"
-  done
-  echo 
 }
 
