@@ -21,9 +21,10 @@
 # provides additional support for more concise roman numbers.
 #
 
-# arabic2roman [options] value [form]
-# roman value [form]
-# roman_digit [place]
+# arabic2roman [options] value [form=0]
+# roman value [form=0]
+# roman_digit digit [place=0]
+# roman_classice value
 
 # roman_defaults_set
 # roman_form_half_set
@@ -36,26 +37,26 @@
 
 RN_MAX_MODERN=3999           # M for '1000' was not in use until the Medieval period).
 RN_MAX_VINCULUM=999999999    # Groups of xxx,yyy,zzz
-declare -a units_modern=(I X C M)
-declare -a halfs_modern=(S V L D)
+declare -a units_text_modern=(I X C M)
+declare -a halfs_text_modern=(S V L D)
 
-declare -a units_unicode=(U+2160 U+2169 U+216D U+216F)
-declare -a halfs_unicode=(     S U+2164 U+216C U+216E)
+declare -a units_glyphs_modern=( "&#x2160;"  "&#x2169;"  "&#x216D;"  "&#x216F;" )
+declare -a halfs_glyphs_modern=(         S   "&#x2164;"  "&#x216C;"  "&#x216E;" )
 
 
 RN_MAX_EARLY=899             # DCCCIXIX --- No M but a D
                              # Conjecture M was a (D or (I)
 RN_MAX_APOSTROPHUS=399999    # Based upon Etruscan numbers
-declare -a units_apostrophus=( I X C "(I)" "((I))" "(((I)))" )
-declare -a halfs_apostrophus=( S V L  "I)"   "I))"    "I)))" )
+declare -a units_text_apostrophus=( I X C "(I)" "((I))" "(((I)))" )
+declare -a halfs_text_apostrophus=( S V L  "I)"   "I))"    "I)))" )
 
-declare -a units_a_unicode=( U+2160 U+2169 U+216D  U+2180 U+2182 U+2188 )
-declare -a halfs_a_unicode=(      S U+2164 U+216C       D U+2181 U+2187 )
+declare -a units_glyphs_apostrophus=( "&#x2160;" "&#x2169;" "&#x216D;"  "&#x2180;" "&#x2182;" "&#x2188;" )
+declare -a halfs_glyphs_apostrophus=(         S " &#x2164;" "&#x216C;"          D  "&#x2181;" "&#x2187;" )
 
-
-
-declare -a units=( ${units_modern[@]} )
-declare -a halfs=( ${halfs_modern[@]} )
+declare -a units=( ${units_text_modern[@]} )
+declare -a halfs=( ${halfs_text_modern[@]} )
+declare -a units_glyphs=( ${units_glyphs_modern[@]} )
+declare -a halfs_glyphs=( ${halfs_glyphs_modern[@]} )
 
 
 RN_STYLE=MODERN
@@ -333,13 +334,13 @@ function arabic2roman(){
       ;;
   
     ( "APOSTROPHUS" )
-      declare -a units=( ${units_apostrophus[@]} )
-      declare -a halfs=( ${halfs_apostrophus[@]} )
+      declare -a units=( ${units_text_apostrophus[@]} )
+      declare -a halfs=( ${halfs_text_apostrophus[@]} )
 
       roman ${number} ${form}
 
-      declare -a units=( ${units_modern[@]} )
-      declare -a halfs=( ${halfs_modern[@]} )      
+      declare -a units=( ${units_text_modern[@]} )
+      declare -a halfs=( ${halfs_text_modern[@]} )      
       ;;
 
   esac
