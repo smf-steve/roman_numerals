@@ -7,7 +7,33 @@
 # conversion of an Arabic number into its equivalent Roman
 # number. The primary routine, "roman", is modeled after the 
 # Microsoft's Excels "roman" function.
-#
+
+function print_usage_roman() {
+
+  cat <<EOF
+  roman [option] number [form]
+    Converts "number" to classical (modern) Roman Numeral.
+      (For other styles of Roman Numerals, see "arabic2roman".)
+    Options:
+      -h    Exclude the half forms: V, L, D, etc
+      -4    Exclude the subtractive form for 4 (IV, XL, CD)
+      -8    Include the subtractive form for 8 (IIX, IIC, IIM)
+      -9    Exclude the subtractive form for 9 (IX, IC, IM)
+    Number: 0..3,999, where max is dependent on the "style".
+    Form: a number in the range 0..4, that specifies how
+      aggressive the subtractive forms are used.
+        0: a subtractive value can be   1/10 of the base, e.g., IX
+        1: a subtractive value can be   1/20 of the base, e.g., VC
+        2: a subtractive value can be  1/100 of the base, e.g., IC
+        3: a subtractive value can be  1/200 of the base, e.g., VM
+        4: a subtractive value can be 1/1000 of the base, e.g., IM
+
+EOF
+
+}
+
+
+
 # An additional routine "arabic2roman" is included to provide
 # additional styles of roman numerals.  The set of styles include:
 #   Modern Roman Numerals (1..3999)
@@ -24,57 +50,42 @@ function print_usage_arabic2roman() {
   cat <<EOF
 
   arabic2roman [option] number [form]
-    options:
+    Options:
       -s style 
             style = {modern, vinculum, early, apostrophus}
       -h    Exclude the half forms: V, L, D, etc
       -4    Exclude the subtractive form for 4 (IV, XL, CD)
       -8    Include the subtractive form for 8 (IIX, IIC, IIM)
       -9    Exclude the subtractive form for 9 (IX, IC, IM)
-    number: 0..max, where max is dependent on the "style"
-       modern:      3,999
-       vinculum:    999,999,999
-       early:       899
-       apostrophus: 399,999
-    where form is 0..4
-       form specifies how aggressive the subtractive forms
-       0: denotes the value is 1/10 of the base, e.g., IX
-       1: denotes the value is 1/20 of the base, e.g., VC
-       2: denotes the value is 1/100 of the base, e.g., IC
-       3: denotes the value is 1/200 of the base, e.g., VM
-       4: denotes the value is 1/1000 of the base, e.g., IM
-
+    Number: 0..max, where max is dependent on the "style"
+      modern:      3,999
+      vinculum:    999,999,999
+      early:       899
+      apostrophus: 399,999
+    Form: a number in the range 0..4, that specifies how
+      aggressive the subtractive forms are used.   
+        0: a subtractive value can be   1/10 of the base, e.g., IX
+        1: a subtractive value can be   1/20 of the base, e.g., VC
+        2: a subtractive value can be  1/100 of the base, e.g., IC
+        3: a subtractive value can be  1/200 of the base, e.g., VM
+        4: a subtractive value can be 1/1000 of the base, e.g., IM
 EOF
 
 }
-
-function print_usage_roman() {
-
-  cat <<EOF
-
-  roman [option] number [form]
-    options:
-      -h    Include the half form
-      -4    Exclude the subtractive form for 4 (IV)
-      -8    Include the subtractive form for 8 (IIX)
-      -9    Exclude the subtractive form for 9 (IX)
-    number: 0..max, where max is dependent on the "style"
-    where form is 0..4
-       form specifies how aggressive the subtractive forms
-       0: denotes the value is 1/10 of the base, e.g., IX
-       1: denotes the value is 1/20 of the base, e.g., VC
-       2: denotes the value is 1/100 of the base, e.g., IC
-       3: denotes the value is 1/200 of the base, e.g., VM
-       4: denotes the value is 1/1000 of the base, e.g., IM
-
-EOF
-
-}
-
 
 # We also include the routine, "roman_classic", which is a simpler
 # implementation of the routine "roman".  The "roman" routine 
 # provides additional support for more concise roman numbers.
+
+function roman_classic() {
+  local number="$1"
+
+  while [[ -n "${number:0}" ]] ; do
+    roman_digit ${number:0:1} ${#number}
+    number=${number:1}
+  done
+  echo
+}
 
 
 
@@ -136,13 +147,14 @@ declare -a RN_DENOMINATORS=( 1000 500 200 100 50 20 10 )
 declare -a RN_EXCEL_DENOMINATORS=( 1000 200 100 20 10 )
   # The denominator is used to determine how aggressive the subtractive form is applied
   # Excel Form range: 0..4
-  # 0:    9 => IX  |  1/10   * 10   = 1   | (-1 + 10   =   9)
-  # 1:   95 => VC  |  1/20   * 100  = 5   | (-5 + 100  =  95)
-  # -:   98 => IIC |  1/50   * 100 = 2    | (-2 + 100  =  98)
-  # 2:   99 => IC  |  1/100  * 100  = 1   | (-1 + 100  =  99)
-  # 3:  995 => VM  |  1/200  * 1000 = 5   | (-5 + 1000 = 995)
-  # -:  998 => IIM |  1/500  * 1000 = 2   | (-2 + 1000 = 998)
-  # 4:  999 => IM  |  1/1000 * 1000 = 1   | (-1 + 1000 = 999)
+  # ---------
+  # 0: 10   |   9 => IX  |  1/10   * 10   = 1   | (-1 + 10   =   9)  [DEFAULT]
+  # 1: 20   |  95 => VC  |  1/20   * 100  = 5   | (-5 + 100  =  95)
+  # -:      |  98 => IIC |  1/50   * 100 = 2    | (-2 + 100  =  98)
+  # 2: 100  |  99 => IC  |  1/100  * 100  = 1   | (-1 + 100  =  99)
+  # 3: 200  | 995 => VM  |  1/200  * 1000 = 5   | (-5 + 1000 = 995)
+  # -:      | 998 => IIM |  1/500  * 1000 = 2   | (-2 + 1000 = 998)
+  # 4: 1000 | 999 => IM  |  1/1000 * 1000 = 1   | (-1 + 1000 = 999)
   #
   # https://support.microsoft.com/en-us/office/roman-function-d6b0b99e-de46-4704-a518-b45a0f8b56f5
   #
@@ -154,44 +166,6 @@ RN_SUBTRACTIVE_FORM=TRUE
   RN_SUBTRACTIVE_FORM_8=FALSE     # FALSE="VIII", otherwise:    "IIX"
   RN_SUBTRACTIVE_FORM_9=TRUE      # TRUE= "IX",   otherwise:  "VIIII"
 
-
-# Values associated with various forms:
-#
-# 1. STANDARD, CLASSIC, SIMPLIFIED=0
-#    - MAX_DENOMINATOR=10
-#
-# 2. SIMPLIFIED=
-#    - RN_SUBTRACTIVE_FORM=TRUE
-#    - RN_HALF_FORM=TRUE
-#    - RN_MAX_DENOMINATOR= {as computed}
-#      * ${RN_EXCEL_DENOMINATORS[4-${RN_MAX_SIMPLIFIED}]}
-#    - SIMPLIFIED=0
-#      - RN_MAX_DENOMINATOR=10
-#    - SIMPLIFIED=1
-#      - RN_MAX_DENOMINATOR=20
-#    - SIMPLIFIED=2
-#      - RN_MAX_DENOMINATOR=100
-#    - SIMPLIFIED=3
-#      - RN_MAX_DENOMINATOR=200
-#    - SIMPLIFIED=3
-#      - RN_MAX_DENOMINATOR=1000
-
-
-# FREE ENVIRONMENT VARIABLES
-#    RN_SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
-#    RN_SUBTRACTIVE_FORM_8=TRUE      # 8 = IIX
-#    RN_SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
-
-
-function roman_classic() {
-  local number="$1"
-
-  while [[ -n "${number:0}" ]] ; do
-    roman_digit ${number:0:1} ${#number}
-    number=${number:1}
-  done
-  echo
-}
 
 
 function roman() {
@@ -205,16 +179,23 @@ function roman() {
       (4) RN_SUBTRACTIVE_FORM_4=FALSE ;;
       (8) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
       (9) RN_SUBTRACTIVE_FORM_9=FALSE ;;
-      (\?) { echo "Error: Invalid option" ;
-            print_usage_roman ;
+      (\?) { 
+             echo "Error: Invalid option" ;
+             print_usage_roman ;
            } > /dev/stderr
+           return 1
+           ;;
     esac
   done
   shift $(( OPTIND - 1 ))
 
   if (( value > RN_MAX )) ; then
-    echo "Error: $value > $RN_MAX" > /dev/stderr
-    return 2
+    {
+      echo "Error: Given number is too large"
+      echo "Style: $RN_STYLE"
+      echo "Max:   $RN_MAX"
+    } > /dev/stderr
+    return 1
   fi
 
   RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[4-${simplified}]}
@@ -262,7 +243,9 @@ function roman_internal() {
             [[ ${RN_SUBTRACTIVE_FORM_8} == FALSE ]] && continue
             ;;
           * )
-            echo \* > /dev/stderr
+            { 
+              echo "Internal Error: unsupported denominator: ${denominator}"
+            } > /dev/stderr
             return 2
             ;;
         esac
@@ -305,7 +288,7 @@ function arabic2roman(){
   local number=${1}
   local form="${2:-0}"
 
-  [[ -z ${number} ]] && { print_usage_arabic2roman  > /dev/stderr ; return 2 ; }
+  [[ -z ${number} ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
   (( ${form} != 0 )) && 
     roman_form_set SIMPLIFIED ${form}
 
@@ -324,28 +307,37 @@ function arabic2roman(){
             (a | apostrophus)  roman_style_set APOSTROPHUS ;;
             (*)
               { echo "Error: Unknown style" ;
-                echo "Usage: -s ('m'odern | 'v'inculum | 'e'arly | 'a'postrophus)" ;
+                echo "Usage: -s ( modern | vinculum | early | apostrophus )" ;
+                echo "       -m  # For modern" ;
+                echo "       -v  # For vinculum" ;
+                echo "       -e  # For early" ;
+                echo "       -a  # For apostrophus" ;
               } > /dev/stderr
-              return 2 
+              return 1 
+              ;;
           esac
           ;;
       (h) roman_form_half_set FALSE ;;
       (4) RN_SUBTRACTIVE_FORM_4=FALSE ;;
       (8) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
       (9) RN_SUBTRACTIVE_FORM_9=FALSE ;;
-      (\?) { echo "Error: Invalid option" ;
-            print_usage_arabic2roman ;
+      (\?) { 
+             echo "Error: Invalid option" ;
+             print_usage_arabic2roman ;
            } > /dev/stderr
+           return 1
+           ;;
     esac
   done
   shift $(( OPTIND - 1 ))
 
 
   if ((number > RN_MAX)) ; then
-    { echo "Current Syntax: ${RN_STYLE}" ;
+    { 
+      echo "Error: Given number exceeds max for ${RN_STYLE} style"
       echo "Maximum Number: ${RN_MAX}" ;
     } > /dev/stderr
-    return 2
+    return 1
   fi
   if ((number == 0)) ; then
     echo nila
@@ -452,14 +444,14 @@ function roman_form_set() {
       { echo "Error: Invalid form" ;
         echo "Usage: roman_form_set (STANDARD | SIMPLIFIED)" ;
       } > /dev/stderr
-      return 2
+      return 1
       ;;
   esac
   if (( number > ${RN_MAX_SIMPLIFIED} )) ; then
     {  echo "ERROR: Invalid number" ;
        echo "Usage: roman_form_set SIMPLIFIED (0..4)" ;
     } > /dev/stderr
-    return 2
+    return 1
   fi
 
   RN_FORM=${form}
@@ -485,7 +477,7 @@ function roman_style_set() {
         echo -n "Usage: roman_style_set" ;
         echo    " ( MODERN | VINCULUM | EARLY | APOSTROPHUS )" ;
       } > /dev/stderr
-      return 2
+      return 1
       ;;
   esac
 
