@@ -77,8 +77,9 @@ EOF
 # implementation of the routine "roman".  The "roman" routine 
 # provides additional support for more concise roman numbers.
 
+# roman_classic [number=0]
 function roman_classic() {
-  local number="$1"
+  local number="${1:-0}"
 
   while [[ -n "${number:0}" ]] ; do
     roman_digit ${number:0:1} ${#number}
@@ -169,7 +170,11 @@ RN_SUBTRACTIVE_FORM=TRUE
 
 
 
+# roman [option] number [form=0]
 function roman() {
+  local number
+  local form
+  local option
 
   OPTIND=1   # Restart getopts
   while getopts h489 option ; do
@@ -188,8 +193,9 @@ function roman() {
   done
   shift $(( OPTIND - 1 ))
 
-  local number="${1:-0}"
-  local form="${2:-0}"
+  number="${1:-0}"
+  form="${2:-0}"
+  ###################
 
   if (( number > RN_MAX )) ; then
     {
@@ -215,9 +221,6 @@ function roman_internal() {
   local half
 
   for (( lower = RN_MAX_DIGIT_VALUE; lower > 1 ; lower = lower / 10 )); do
-    local denominator
-    local i
-
     if (( lower > value )) ; then
       continue
     fi
@@ -225,9 +228,9 @@ function roman_internal() {
     (( upper = lower * 10 ))
     (( half  = lower * 5  ))
 
-
     # Following handles the Extended Subtractive forms
     if (( RN_MAX_DENOMINATOR > 0 )) ; then 
+      local denominator
       for denominator in ${RN_DENOMINATORS[@]} ; do
         (( denominator > RN_MAX_DENOMINATOR )) && continue 
 
@@ -243,6 +246,7 @@ function roman_internal() {
                 ;;
         esac
 
+        local i
         (( i = upper / denominator ))
         (( i >= lower )) && break 1
 
@@ -275,11 +279,13 @@ function roman_internal() {
 }
 
 
-
+# arabic2roman [option] number [option=0]
 function arabic2roman(){
-  # Converts an arabic number to a roman number
-
+  # Converts an Arabic number to a roman number
+  local number
+  local form
   local option
+
   OPTIND=1   # Restart getopts
   while getopts s:mveah489 option ; do
     case "${option}" in
@@ -315,8 +321,9 @@ function arabic2roman(){
   done
   shift $(( OPTIND - 1 ))
 
-  local number=${1}
-  local form="${2:-0}"
+  number=${1}
+  form="${2:-0}"
+  ###############################
 
   [[ -z "${number}" ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
   (( form != 0 ))      && roman_form_set SIMPLIFIED ${form}
@@ -485,8 +492,8 @@ roman_defaults_set
 
 
 function roman_digit() {
-  local digit=$1
-  local place=$2
+  local digit="$1"
+  local place="$2"
 
   if [[ -z "${place}" ]] ; then
     place=1
