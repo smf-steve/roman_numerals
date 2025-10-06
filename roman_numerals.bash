@@ -98,7 +98,7 @@ function roman_classic() {
 
 ## LIST of SUPPORT routines
 #
-# roman_internal value [form]
+# roman_internal number
 # roman_defaults_set
 # roman_form_half_set
 # roman_form_subtractive_set (TRUE | FALSE)
@@ -111,24 +111,25 @@ function roman_classic() {
 ## STYLE-Dependent Information
 RN_MAX_MODERN=3999           # M for '1000' was not in use until the Medieval period).
 RN_MAX_VINCULUM=999999999    # Groups of xxx,yyy,zzz
-declare -a units_text_modern=(           I           X           C          M )
-declare -a units_glyphs_modern=( "&#x2160;"  "&#x2169;"  "&#x216D;"  "&#x216F;" )
+declare -a units_text_modern=(           I           X           C          M    error)
+declare -a units_glyphs_modern=( "&#x2160;"  "&#x2169;"  "&#x216D;"  "&#x216F;"  error)
 
-declare -a halfs_text_modern=(           S           V           L          D )
-declare -a halfs_glyphs_modern=(         S   "&#x2164;"  "&#x216C;"  "&#x216E;" )
+declare -a halfs_text_modern=(           S           V           L          D    error)
+declare -a halfs_glyphs_modern=(         S   "&#x2164;"  "&#x216C;"  "&#x216E;"  error)
 
 
 RN_MAX_EARLY=899             
 RN_MAX_APOSTROPHUS=399999    # Based upon Etruscan numbers
 # APOSTROPHUS: "D",  a symbol resembling a reversed letter C used to denote large numbers
 
-declare -a units_text_apostrophus=(           I          X          C        "(I)"    "((I))"  "(((I)))" )
-declare -a units_glyphs_apostrophus=( "&#x2160;" "&#x2169;" "&#x216D;"  "&#x2180;" "&#x2182;" "&#x2188;" )
-declare -a halfs_text_apostrophus=(           S          V          L         "I)"      "I))"     "I)))" )
-declare -a halfs_glyphs_apostrophus=(         S " &#x2164;" "&#x216C;"          D  "&#x2181;" "&#x2187;" )
+declare -a units_text_apostrophus=(           I          X          C        "(I)"    "((I))"  "(((I)))" error )
+declare -a units_glyphs_apostrophus=( "&#x2160;" "&#x2169;" "&#x216D;"  "&#x2180;" "&#x2182;" "&#x2188;" error )
+declare -a halfs_text_apostrophus=(           S          V          L         "I)"      "I))"     "I)))" error )
+declare -a halfs_glyphs_apostrophus=(         S " &#x2164;" "&#x216C;"          D  "&#x2181;" "&#x2187;" error )
 
 
 ## STYLE-Independent Information
+#
 RN_STYLE=MODERN              # MODERN, VINCULUM, EARLY, APOSTROPHUS
 RN_MAX=${RN_MAX_MODERN}
 RN_MAX_DIGIT_VALUE=100000    # APOSTROPHUS: (((I)))
@@ -169,8 +170,6 @@ RN_SUBTRACTIVE_FORM=TRUE
 
 
 function roman() {
-  local value="${1:-0}"
-  local simplified="${2:-0}"
 
   OPTIND=1   # Restart getopts
   while getopts h489 option ; do
@@ -189,18 +188,20 @@ function roman() {
   done
   shift $(( OPTIND - 1 ))
 
-  if (( value > RN_MAX )) ; then
+  local number="${1:-0}"
+  local form="${2:-0}"
+
+  if (( number > ${RN_MAX} )) ; then
     {
       echo "Error: Given number is too large"
       echo "Style: $RN_STYLE"
       echo "Max:   $RN_MAX"
     } > /dev/stderr
-    return 1
   fi
 
-  RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[4-${simplified}]}
+  RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[4-${form}]}
 
-  roman_internal ${number} ${form}
+  roman_internal ${number}
   echo
   return 0
 }
@@ -208,7 +209,6 @@ function roman() {
 
 function roman_internal() {
   local value="${1:-0}"
-  local simplified="${2:-0}"
 
   local lower
   local upper
@@ -285,16 +285,8 @@ function roman_internal() {
 
 function arabic2roman(){
   # Converts an arabic number to a roman number
-  local number=${1}
-  local form="${2:-0}"
-
-  [[ -z ${number} ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
-  (( ${form} != 0 )) && 
-    roman_form_set SIMPLIFIED ${form}
-
 
   local option
-
   OPTIND=1   # Restart getopts
   while getopts s:mveah489 option ; do
     case ${option} in
@@ -331,6 +323,12 @@ function arabic2roman(){
   done
   shift $(( OPTIND - 1 ))
 
+  local number=${1}
+  local form="${2:-0}"
+
+  [[ -z ${number} ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
+  (( ${form} != 0 )) && 
+    roman_form_set SIMPLIFIED ${form}
 
   if ((number > RN_MAX)) ; then
     { 
@@ -447,7 +445,7 @@ function roman_form_set() {
       return 1
       ;;
   esac
-  if (( number > ${RN_MAX_SIMPLIFIED} )) ; then
+  if (( number > RN_MAX_SIMPLIFIED )) ; then
     {  echo "ERROR: Invalid number" ;
        echo "Usage: roman_form_set SIMPLIFIED (0..4)" ;
     } > /dev/stderr
@@ -498,9 +496,9 @@ function roman_digit() {
     place=1
   fi
 
-  local unit=${units[place-1]}           
-  local half=${halfs[place]}
   local full=${units[place]}
+  local half=${halfs[place]}
+  local unit=${units[place-1]}
 
   if [[ ${RN_HALF_FORM} == FALSE ]] ; then
     half="${unit}${unit}${unit}${unit}${unit}"
