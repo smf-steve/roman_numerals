@@ -173,17 +173,17 @@ function roman() {
 
   OPTIND=1   # Restart getopts
   while getopts h489 option ; do
-    case ${option} in
-      (h) roman_form_half_set FALSE   ;;
-      (4) RN_SUBTRACTIVE_FORM_4=FALSE ;;
-      (8) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
-      (9) RN_SUBTRACTIVE_FORM_9=FALSE ;;
-      (\?) { 
-             echo "Error: Invalid option" ;
-             print_usage_roman ;
-           } > /dev/stderr
-           return 1
-           ;;
+    case "${option}" in
+      ( h )  roman_form_half_set FALSE   ;;
+      ( 4 )  RN_SUBTRACTIVE_FORM_4=FALSE ;;
+      ( 8 )  RN_SUBTRACTIVE_FORM_8=TRUE  ;;
+      ( 9 )  RN_SUBTRACTIVE_FORM_9=FALSE ;;
+      ( \? ) { 
+               echo "Error: Invalid option" ;
+               print_usage_roman ;
+             } > /dev/stderr
+             return 1
+             ;;
     esac
   done
   shift $(( OPTIND - 1 ))
@@ -233,14 +233,14 @@ function roman_internal() {
 
         # skip over non-applicable denominators
         case "${denominator:0:1}" in
-          1 ) :                                                   ;; # 1/10xxx
-          2 ) [[ ${RN_HALF_FORM} == FALSE ]] && continue          ;; # 1/2xxxx
-          5 ) [[ ${RN_SUBTRACTIVE_FORM_8} == FALSE ]] && continue ;; # 1/5xxxx
-          * ) { 
-                echo "Internal Error: unsupported denominator: ${denominator}"
-              } > /dev/stderr
-              return 2
-              ;;
+          ( 1 ) :                                                     ;; # 1/10xxx
+          ( 2 ) [[ "${RN_HALF_FORM}" == FALSE ]] && continue          ;; # 1/2xxxx
+          ( 5 ) [[ "${RN_SUBTRACTIVE_FORM_8}" == FALSE ]] && continue ;; # 1/5xxxx
+          ( * ) { 
+                  echo "Internal Error: unsupported denominator: ${denominator}"
+                } > /dev/stderr
+                return 2
+                ;;
         esac
 
         (( i = upper / denominator ))
@@ -254,7 +254,7 @@ function roman_internal() {
           continue 2
         fi
 
-        if [[ ${RN_HALF_FORM} == TRUE ]] && ((value < half)) ; then
+        if [[ "${RN_HALF_FORM}" == TRUE ]] && ((value < half)) ; then
          if ((value + i >= half )); then
            roman_digit ${i:0:1} ${#i} 
            roman_digit 5 ${#half} 
@@ -282,35 +282,35 @@ function arabic2roman(){
   local option
   OPTIND=1   # Restart getopts
   while getopts s:mveah489 option ; do
-    case ${option} in
+    case "${option}" in
       ( s | m | v | e | a )
-          [[ ${option} == "s" ]] && option=${OPTARG}
-          case ${option} in
-            (m | modern)       roman_style_set MODERN      ;;
-            (v | vinculum)     roman_style_set VINCULUM    ;;
-            (e | early)        roman_style_set EARLY       ;;
-            (a | apostrophus)  roman_style_set APOSTROPHUS ;;
-            (*) { echo "Error: Unknown style" ;
-                  echo "Usage: -s ( modern | vinculum | early | apostrophus )" ;
-                  echo "       -m  # For modern" ;
-                  echo "       -v  # For vinculum" ;
-                  echo "       -e  # For early" ;
-                  echo "       -a  # For apostrophus" ;
-                } > /dev/stderr
-                return 1 
-                ;;
+          [[ "${option}" == "s" ]] && option="${OPTARG}"
+          case "${option}" in
+            ( m | modern )       roman_style_set MODERN      ;;
+            ( v | vinculum )     roman_style_set VINCULUM    ;;
+            ( e | early )        roman_style_set EARLY       ;;
+            ( a | apostrophus )  roman_style_set APOSTROPHUS ;;
+            ( * ) { echo "Error: Unknown style" ;
+                    echo "Usage: -s ( modern | vinculum | early | apostrophus )" ;
+                    echo "       -m  # For modern" ;
+                    echo "       -v  # For vinculum" ;
+                    echo "       -e  # For early" ;
+                    echo "       -a  # For apostrophus" ;
+                  } > /dev/stderr
+                  return 1 
+                  ;;
           esac
           ;;
-      ( h ) roman_form_half_set FALSE   ;;
-      ( 4 ) RN_SUBTRACTIVE_FORM_4=FALSE ;;
-      ( 8 ) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
-      ( 9 ) RN_SUBTRACTIVE_FORM_9=FALSE ;;
-      ( \ ?) { 
-             echo "Error: Invalid option" ;
-             print_usage_arabic2roman ;
-           } > /dev/stderr
-           return 1
-           ;;
+      ( h )  roman_form_half_set FALSE   ;;
+      ( 4 )  RN_SUBTRACTIVE_FORM_4=FALSE ;;
+      ( 8 )  RN_SUBTRACTIVE_FORM_8=TRUE  ;;
+      ( 9 )  RN_SUBTRACTIVE_FORM_9=FALSE ;;
+      ( \? ) { 
+               echo "Error: Invalid option" ;
+               print_usage_arabic2roman ;
+             } > /dev/stderr
+             return 1
+             ;;
     esac
   done
   shift $(( OPTIND - 1 ))
@@ -318,9 +318,8 @@ function arabic2roman(){
   local number=${1}
   local form="${2:-0}"
 
-  [[ -z ${number} ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
-  (( ${form} != 0 )) && 
-    roman_form_set SIMPLIFIED ${form}
+  [[ -z "${number}" ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
+  (( form != 0 ))      && roman_form_set SIMPLIFIED ${form}
 
   if ((number > RN_MAX)) ; then
     { 
@@ -336,12 +335,12 @@ function arabic2roman(){
 
 
   local group3 group2 group1
-  case ${RN_STYLE} in
-    ( "EARLY"  | "MODERN" ) 
+  case "${RN_STYLE}" in
+    ( EARLY  | MODERN ) 
       roman_internal ${number} ${form}
       ;;
 
-    ( "VINCULUM" )
+    ( VINCULUM )
       #  vinculum: &#x305;
       #  vertical bar: &#x7c;
       #  <vinculum>|xxxx|<vinculum>  <vinculum>yyy<vinculum> zzz
@@ -366,7 +365,7 @@ function arabic2roman(){
       roman_internal ${group1} ${form}
       ;;
   
-    ( "APOSTROPHUS" )
+    ( APOSTROPHUS )
       # "D" a symbol resembling a reversed letter C used in Roman numerals to denote large numbers
 
       declare -a units=( ${units_text_apostrophus[@]} )
@@ -377,7 +376,7 @@ function arabic2roman(){
       declare -a units=( ${units_text_modern[@]} )
       declare -a halfs=( ${halfs_text_modern[@]} )      
       ;;
-      
+
     ( * )
       {
         echo "Internal Error: Unknown styler" ;
@@ -404,7 +403,7 @@ function roman_form_half_set() {
   local value="$1"
 
   RN_HALF_FORM=TRUE
-  if [[ $value == FALSE ]] ; then
+  if [[ "${value}" == FALSE ]] ; then
     RN_HALF_FORM=FALSE
     RN_SUBTRACTIVE_FORM_4=FALSE   # IV is not valid
   fi
@@ -417,7 +416,7 @@ function roman_form_subtractive_set() {
   RN_SUBTRACTIVE_FORM_4=TRUE      # 4 = IV
   RN_SUBTRACTIVE_FORM_8=FALSE     # 8 = VIII
   RN_SUBTRACTIVE_FORM_9=TRUE      # 9 = IX 
-  if [[ ${value} == FALSE ]] ; then
+  if [[ "${value}" == FALSE ]] ; then
     RN_SUBTRACTIVE_FORM=FALSE      
     RN_SUBTRACTIVE_FORM_4=FALSE   # 4 = IIII
     RN_SUBTRACTIVE_FORM_8=FALSE   # 8 = VIII
@@ -429,28 +428,28 @@ function roman_form_set() {
   local form="${1:-STANDARD}"
   local number="${2:-${RN_MAX_SIMPLIFIED}}"
 
-  case $form in
+  case "${form}" in
     ( STANDARD | CLASSIC )
-      number=0;
-      ;;
+        number=0;
+        ;;
     ( SIMPLIFIED ) 
-      ;;
+        ;;
     ( * )
-      { echo "Error: Invalid form" ;
-        echo "Usage: roman_form_set (STANDARD | SIMPLIFIED)" ;
-      } > /dev/stderr
-      return 1
-      ;;
+        { echo "Error: Invalid form" ;
+          echo "Usage: roman_form_set (STANDARD | SIMPLIFIED)" ;
+        } > /dev/stderr
+        return 1
+        ;;
   esac
   if (( number > RN_MAX_SIMPLIFIED )) ; then
-    {  echo "Error: Invalid number" ;
-       echo "Usage: roman_form_set SIMPLIFIED (0..4)" ;
+    { echo "Error: Invalid number" ;
+      echo "Usage: roman_form_set SIMPLIFIED (0..4)" ;
     } > /dev/stderr
     return 1
   fi
 
   RN_FORM=${form}
-  if [[ ${RN_FORM} == "SIMPLIFIED" ]] ; then
+  if [[ "${RN_FORM}" == SIMPLIFIED ]] ; then
     local index
     (( index = RN_MAX_SIMPLIFIED - number))
     RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[index]}
@@ -463,17 +462,17 @@ function roman_form_set() {
 function roman_style_set() {
   local style="${1:-MODERN}"
   
-  case "$style" in
+  case "${style}" in
     ( MODERN | VINCULUM | EARLY | APOSTROPHUS )
         RN_STYLE=${style}
         ;;
     ( * )
-      { echo "Error: Invalid style" ;
-        echo -n "Usage: roman_style_set" ;
-        echo    " ( MODERN | VINCULUM | EARLY | APOSTROPHUS )" ;
-      } > /dev/stderr
-      return 1
-      ;;
+        { echo "Error: Invalid style" ;
+          echo -n "Usage: roman_style_set" ;
+          echo    " ( MODERN | VINCULUM | EARLY | APOSTROPHUS )" ;
+        } > /dev/stderr
+        return 1
+        ;;
   esac
 
   local max="RN_MAX_${style}"
@@ -489,7 +488,7 @@ function roman_digit() {
   local digit=$1
   local place=$2
 
-  if [[ -z ${place} ]] ; then
+  if [[ -z "${place}" ]] ; then
     place=1
   fi
 
@@ -497,57 +496,57 @@ function roman_digit() {
   local half=${halfs[place]}
   local unit=${units[place-1]}
 
-  if [[ ${RN_HALF_FORM} == FALSE ]] ; then
+  if [[ "${RN_HALF_FORM}" == FALSE ]] ; then
     half="${unit}${unit}${unit}${unit}${unit}"
   fi
 
-  case ${digit} in
-    ( 1|2|3 )
-      local i
-      for ((i = digit; i>0; i--)) ; do
-        echo -n "${unit}"
-      done
-      ;;
+  case "${digit}" in
+    ( 1 | 2 | 3 )
+        local i
+        for ((i = digit; i>0; i--)) ; do
+          echo -n "${unit}"
+        done
+        ;;
 
     ( 4 )
-      if [[ ${RN_SUBTRACTIVE_FORM_4} == FALSE ]] || [[ ${RN_HALF_FORM} == FALSE ]]  ; then 
-        echo -n "${unit}${unit}${unit}${unit}"
-      else
-        echo -n "${unit}${half}"        
-      fi
-      ;;
+        if [[ "${RN_SUBTRACTIVE_FORM_4}" == FALSE ]] || [[ "${RN_HALF_FORM}" == FALSE ]]  ; then 
+          echo -n "${unit}${unit}${unit}${unit}"
+        else
+          echo -n "${unit}${half}"        
+        fi
+        ;;
 
     ( 5 )
-      echo -n "${half}"
-      ;;
+        echo -n "${half}"
+        ;;
 
     ( 6 | 7 )
-      echo -n "${half}${unit}"
-      if (( digit == 7 )) ; then
-        echo -n "${unit}"
-      fi
-      ;;
+        echo -n "${half}${unit}"
+        if (( digit == 7 )) ; then
+          echo -n "${unit}"
+        fi
+        ;;
 
     ( 8 )
-      if [[ ${RN_SUBTRACTIVE_FORM_8} == TRUE ]] ; then
-        echo -n "${unit}${unit}${full}" 
-      else
-        echo -n "${half}${unit}${unit}${unit}"
-      fi
+        if [[ "${RN_SUBTRACTIVE_FORM_8}" == TRUE ]] ; then
+          echo -n "${unit}${unit}${full}" 
+        else
+          echo -n "${half}${unit}${unit}${unit}"
+        fi
         ;; 
 
     ( 9 )
-      if [[ ${RN_SUBTRACTIVE_FORM_9} == TRUE ]] ; then 
-        echo -n "${unit}${full}"
-      else
-        echo -n "${half}${unit}${unit}${unit}${unit}"
-      fi
-      ;;
+        if [[ "${RN_SUBTRACTIVE_FORM_9}" == TRUE ]] ; then 
+          echo -n "${unit}${full}"
+        else
+          echo -n "${half}${unit}${unit}${unit}${unit}"
+        fi
+        ;;
     ( * )
-      {
-        echo "Internal Error: Invalid digit" ;
-      } > /dev/stderr
-      ;; 
+        {
+          echo "Internal Error: Invalid digit" ;
+        } > /dev/stderr
+        ;; 
   esac
 }
 
