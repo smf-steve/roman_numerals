@@ -29,13 +29,13 @@ function print_usage_roman() {
         4: a subtractive value can be 1/1000 of the base, e.g., IM
 
 EOF
-
 }
 
 
 
 # An additional routine "arabic2roman" is included to provide
-# additional styles of roman numerals.  The set of styles include:
+# support for additional styles of roman numerals.  The set of 
+# styles include:
 #   Modern Roman Numerals (1..3999)
 #   Vinculum Roman Numerals (1..999,999,999)
 #   Early Roman Numerals (1..899)
@@ -48,11 +48,10 @@ EOF
 function print_usage_arabic2roman() {
 
   cat <<EOF
-
   arabic2roman [option] number [form]
     Options:
       -s style 
-            style = {modern, vinculum, early, apostrophus}
+            style = (modern, vinculum, early, apostrophus)
       -h    Exclude the half forms: V, L, D, etc
       -4    Exclude the subtractive form for 4 (IV, XL, CD)
       -8    Include the subtractive form for 8 (IIX, IIC, IIM)
@@ -70,7 +69,7 @@ function print_usage_arabic2roman() {
         3: a subtractive value can be  1/200 of the base, e.g., VM
         4: a subtractive value can be 1/1000 of the base, e.g., IM
 EOF
-
+  return 0
 }
 
 # We also include the routine, "roman_classic", which is a simpler
@@ -276,6 +275,7 @@ function roman_internal() {
 
   # This is the remaining single digit or zero
   roman_digit ${value:0:1} ${#value}
+  return 0
 }
 
 
@@ -414,6 +414,7 @@ function roman_form_half_set() {
     RN_HALF_FORM=FALSE
     RN_SUBTRACTIVE_FORM_4=FALSE   # IV is not valid
   fi
+  return 0
 }
 
 function roman_form_subtractive_set() {
@@ -429,6 +430,7 @@ function roman_form_subtractive_set() {
     RN_SUBTRACTIVE_FORM_8=FALSE   # 8 = VIII
     RN_SUBTRACTIVE_FORM_9=FALSE   # 9 = VIIII
   fi 
+  return 0
 }
 
 function roman_form_set() {
@@ -463,11 +465,11 @@ function roman_form_set() {
   else
     RN_MAX_DENOMINATOR=${RN_MAX_DENOMINATOR_DEFAULT}
   fi
+  return 0
 }
 
-# MODERN, VINCULUM, EARLY, APOSTROPHUS
 function roman_style_set() {
-  local style="${1:-MODERN}"
+  local style="${1:-MODERN}"      # MODERN, VINCULUM, EARLY, APOSTROPHUS
   
   case "${style}" in
     ( MODERN | VINCULUM | EARLY | APOSTROPHUS )
@@ -484,6 +486,7 @@ function roman_style_set() {
 
   local max="RN_MAX_${style}"
   RN_MAX=${!max}
+  return 0
 }
 
 
@@ -555,6 +558,7 @@ function roman_digit() {
         } > /dev/stderr
         ;; 
   esac
+  return 0
 }
 
 
