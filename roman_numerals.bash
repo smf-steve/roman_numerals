@@ -191,7 +191,7 @@ function roman() {
   local number="${1:-0}"
   local form="${2:-0}"
 
-  if (( number > ${RN_MAX} )) ; then
+  if (( number > RN_MAX )) ; then
     {
       echo "Error: Given number is too large"
       echo "Style: $RN_STYLE"
@@ -214,7 +214,7 @@ function roman_internal() {
   local upper
   local half
 
-  for ((lower = RN_MAX_DIGIT_VALUE; lower > 1 ; lower = lower / 10 )); do
+  for (( lower = RN_MAX_DIGIT_VALUE; lower > 1 ; lower = lower / 10 )); do
     local denominator
     local i
 
@@ -227,7 +227,7 @@ function roman_internal() {
 
 
     # Following handles the Extended Subtractive forms
-    if (( ${RN_MAX_DENOMINATOR} > 0 )) ; then 
+    if (( RN_MAX_DENOMINATOR > 0 )) ; then 
       for denominator in ${RN_DENOMINATORS[@]} ; do
         (( denominator > RN_MAX_DENOMINATOR )) && continue 
 
@@ -244,9 +244,9 @@ function roman_internal() {
         esac
 
         (( i = upper / denominator ))
-        (( i >= lower)) && break 1
+        (( i >= lower )) && break 1
 
-        if ((value + i >= upper )); then
+        if (( value + i >= upper )); then
           roman_digit ${i:0:1} ${#i} 
           roman_digit 1 ${#upper} 
 
@@ -254,8 +254,8 @@ function roman_internal() {
           continue 2
         fi
 
-        if [[ "${RN_HALF_FORM}" == TRUE ]] && ((value < half)) ; then
-         if ((value + i >= half )); then
+        if [[ "${RN_HALF_FORM}" == TRUE ]] && (( value < half )) ; then
+         if (( value + i >= half )); then
            roman_digit ${i:0:1} ${#i} 
            roman_digit 5 ${#half} 
 
@@ -321,14 +321,14 @@ function arabic2roman(){
   [[ -z "${number}" ]] && { print_usage_arabic2roman  > /dev/stderr ; return 1 ; }
   (( form != 0 ))      && roman_form_set SIMPLIFIED ${form}
 
-  if ((number > RN_MAX)) ; then
+  if (( number > RN_MAX )) ; then
     { 
       echo "Error: Given number exceeds max for ${RN_STYLE} style"
       echo "Maximum Number: ${RN_MAX}" ;
     } > /dev/stderr
     return 1
   fi
-  if ((number == 0)) ; then
+  if (( number == 0 )) ; then
     echo nila
     return 1
   fi
@@ -448,10 +448,10 @@ function roman_form_set() {
     return 1
   fi
 
-  RN_FORM=${form}
+  RN_FORM="${form}"
   if [[ "${RN_FORM}" == SIMPLIFIED ]] ; then
     local index
-    (( index = RN_MAX_SIMPLIFIED - number))
+    (( index = RN_MAX_SIMPLIFIED - number ))
     RN_MAX_DENOMINATOR=${RN_EXCEL_DENOMINATORS[index]}
   else
     RN_MAX_DENOMINATOR=${RN_MAX_DENOMINATOR_DEFAULT}
@@ -503,7 +503,7 @@ function roman_digit() {
   case "${digit}" in
     ( 1 | 2 | 3 )
         local i
-        for ((i = digit; i>0; i--)) ; do
+        for (( i = digit; i>0; i-- )) ; do
           echo -n "${unit}"
         done
         ;;
