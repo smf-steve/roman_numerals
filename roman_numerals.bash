@@ -174,7 +174,7 @@ function roman() {
   OPTIND=1   # Restart getopts
   while getopts h489 option ; do
     case ${option} in
-      (h) roman_form_half_set FALSE ;;
+      (h) roman_form_half_set FALSE   ;;
       (4) RN_SUBTRACTIVE_FORM_4=FALSE ;;
       (8) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
       (9) RN_SUBTRACTIVE_FORM_9=FALSE ;;
@@ -233,21 +233,14 @@ function roman_internal() {
 
         # skip over non-applicable denominators
         case "${denominator:0:1}" in
-          1 )
-            :
-            ;;
-          2 )  # 1/2xxxx
-            [[ ${RN_HALF_FORM} == FALSE ]] && continue
-            ;;
-          5 )  # 1/5xxxx
-            [[ ${RN_SUBTRACTIVE_FORM_8} == FALSE ]] && continue
-            ;;
-          * )
-            { 
-              echo "Internal Error: unsupported denominator: ${denominator}"
-            } > /dev/stderr
-            return 2
-            ;;
+          1 ) :                                                   ;; # 1/10xxx
+          2 ) [[ ${RN_HALF_FORM} == FALSE ]] && continue          ;; # 1/2xxxx
+          5 ) [[ ${RN_SUBTRACTIVE_FORM_8} == FALSE ]] && continue ;; # 1/5xxxx
+          * ) { 
+                echo "Internal Error: unsupported denominator: ${denominator}"
+              } > /dev/stderr
+              return 2
+              ;;
         esac
 
         (( i = upper / denominator ))
@@ -297,23 +290,22 @@ function arabic2roman(){
             (v | vinculum)     roman_style_set VINCULUM    ;;
             (e | early)        roman_style_set EARLY       ;;
             (a | apostrophus)  roman_style_set APOSTROPHUS ;;
-            (*)
-              { echo "Error: Unknown style" ;
-                echo "Usage: -s ( modern | vinculum | early | apostrophus )" ;
-                echo "       -m  # For modern" ;
-                echo "       -v  # For vinculum" ;
-                echo "       -e  # For early" ;
-                echo "       -a  # For apostrophus" ;
-              } > /dev/stderr
-              return 1 
-              ;;
+            (*) { echo "Error: Unknown style" ;
+                  echo "Usage: -s ( modern | vinculum | early | apostrophus )" ;
+                  echo "       -m  # For modern" ;
+                  echo "       -v  # For vinculum" ;
+                  echo "       -e  # For early" ;
+                  echo "       -a  # For apostrophus" ;
+                } > /dev/stderr
+                return 1 
+                ;;
           esac
           ;;
-      (h) roman_form_half_set FALSE ;;
-      (4) RN_SUBTRACTIVE_FORM_4=FALSE ;;
-      (8) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
-      (9) RN_SUBTRACTIVE_FORM_9=FALSE ;;
-      (\?) { 
+      ( h ) roman_form_half_set FALSE   ;;
+      ( 4 ) RN_SUBTRACTIVE_FORM_4=FALSE ;;
+      ( 8 ) RN_SUBTRACTIVE_FORM_8=TRUE  ;;
+      ( 9 ) RN_SUBTRACTIVE_FORM_9=FALSE ;;
+      ( \ ?) { 
              echo "Error: Invalid option" ;
              print_usage_arabic2roman ;
            } > /dev/stderr
@@ -370,7 +362,6 @@ function arabic2roman(){
         echo -n $(roman_internal ${group2} ${form})
         echo -n "<\vinculum>"
         echo -n " "
-
       fi  
       roman_internal ${group1} ${form}
       ;;
@@ -386,7 +377,13 @@ function arabic2roman(){
       declare -a units=( ${units_text_modern[@]} )
       declare -a halfs=( ${halfs_text_modern[@]} )      
       ;;
-
+      
+    ( * )
+      {
+        echo "Internal Error: Unknown styler" ;
+      } > /dev/stderr
+      return 2
+      ;;
   esac
   echo
   return 0
@@ -446,7 +443,7 @@ function roman_form_set() {
       ;;
   esac
   if (( number > RN_MAX_SIMPLIFIED )) ; then
-    {  echo "ERROR: Invalid number" ;
+    {  echo "Error: Invalid number" ;
        echo "Usage: roman_form_set SIMPLIFIED (0..4)" ;
     } > /dev/stderr
     return 1
@@ -546,6 +543,11 @@ function roman_digit() {
         echo -n "${half}${unit}${unit}${unit}${unit}"
       fi
       ;;
+    ( * )
+      {
+        echo "Internal Error: Invalid digit" ;
+      } > /dev/stderr
+      ;; 
   esac
 }
 
