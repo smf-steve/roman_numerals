@@ -1,6 +1,35 @@
 # roman_numerals
 A bash implementation of the EXCEL "roman" function
 
+# SYNOPSIS
+
+
+  arabic2roman [option ] value [form]
+    -s style
+      style = {modern vinculum early apostrophus}
+    -m
+    -e
+    -v
+    -a
+    -f (0..4)
+    -h half
+    -9
+    -4
+    -8 
+
+
+# ENVIRONMENT
+
+
+
+# roman_digit value
+# roman value [form]  
+# arabic2roman
+
+
+# Description
+  
+
 # Number Construction
 
 # Subtractive Forms
@@ -82,6 +111,6 @@ A bash implementation of the EXCEL "roman" function
 - https://www.rapidtables.com/math/symbols/roman_numerals.html
 
 - https://www.fileformat.info/info/unicode/block/number_forms/images.htm
-
+- https://www.fileformat.info/info/unicode/char/0305/index.htm
 - https://support.microsoft.com/en-us/office/roman-function-d6b0b99e-de46-4704-a518-b45a0f8b56f5
 
