@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 # lookup the glyphs for D, S, etc.
 
@@ -94,6 +94,7 @@ function roman_classic() {
 # arabic2roman [options] number [form=0]
 # roman number [form=0]
 # roman_digit digit [place=0]
+#    digit != 0 if [[! -z place ]]
 # roman_classic number
 
 ## LIST of SUPPORT routines
@@ -176,13 +177,13 @@ function roman() {
   local option
 
   OPTIND=1   # Restart getopts
-  while getopts h489 option ; do
+  while getopts h489-: option ; do
     case "${option}" in
-      ( h )  roman_form_half_set FALSE   ;;
-      ( 4 )  RN_SUBTRACTIVE_FORM_4=FALSE ;;
-      ( 8 )  RN_SUBTRACTIVE_FORM_8=TRUE  ;;
-      ( 9 )  RN_SUBTRACTIVE_FORM_9=FALSE ;;
-      ( \? ) { 
+      ( -h | -half )  roman_form_half_set FALSE   ;;
+      ( -4  )  RN_SUBTRACTIVE_FORM_4=FALSE ;;
+      ( -8  )  RN_SUBTRACTIVE_FORM_8=TRUE  ;;
+      ( -9  )  RN_SUBTRACTIVE_FORM_9=FALSE ;;
+      ( \?  ) { 
                echo "Error: Invalid option" ;
                print_usage_roman ;
              } > /dev/stderr
@@ -498,6 +499,8 @@ function roman_digit() {
   local digit="$1"
   local place="$2"
 
+  ((digit == 0)) && return 0
+
   if [[ -z "${place}" ]] ; then
     place=1
   fi
@@ -553,6 +556,7 @@ function roman_digit() {
         fi
         ;;
     ( * )
+      echo ${digit}
         {
           echo "Internal Error: Invalid digit" ;
         } > /dev/stderr
