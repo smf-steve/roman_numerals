@@ -3,6 +3,7 @@
 _form=${1:-0}
 
 source ../roman_numerals.bash 
+#RN_SUBTRACTIVE_FORM_8=TRUE
 
 for (( i=1; i <= 3999 ; i++ )) ; do
    roman $i $_form
